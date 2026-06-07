@@ -570,7 +570,7 @@ class _DebtPaymentDialog extends StatelessWidget {
               'Bayar hutang dari dompet mana?',
               style: TextStyle(
                 color: SakuColors.black,
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
             ),
