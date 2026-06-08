@@ -1,5 +1,6 @@
 import 'dashboard_shared.dart';
-import 'add_note_page.dart';
+import '../bloc/add_note/add_note_bloc.dart';
+import 'category_picker_component.dart'; // Tambahkan ini di bagian atas file kamu
 
 class HistoryDashboard extends StatefulWidget {
   const HistoryDashboard({
@@ -130,23 +131,17 @@ class _FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<_FilterDialog> {
   late String _category = widget.selectedCategory;
 
-  void _pickCategory() {
-    showModalBottomSheet<void>(
+Future<void> _pickCategory() async {
+    final selected = await CategoryPickerComponent.showAsBottomSheet(
       context: context,
-      backgroundColor: SakuColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CategoryPickerSheet(
-        selectedCategory: _category,
-        kind: CategoryKind.expense,
-        includeAll: true,
-        onSelected: (category) {
-          setState(() => _category = category);
-          Navigator.of(context).pop();
-        },
-      ),
+      selectedCategory: _category,
+      kind: CategoryKind.expense,
+      // 💡 Hapus baris includeAll: true disini
     );
+
+    if (selected != null && mounted) {
+      setState(() => _category = selected);
+    }
   }
 
   @override

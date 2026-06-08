@@ -1,5 +1,6 @@
+import 'package:flutter/material.dart';
 import 'dashboard_shared.dart';
-import 'add_note_page.dart';
+import 'category_picker_component.dart'; // Pastikan mengarah ke file komponen picker baru
 
 class BudgetDashboard extends StatelessWidget {
   const BudgetDashboard({
@@ -55,7 +56,7 @@ class BudgetDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 26),
               const Text(
-                'Katagori budget',
+                'Kategori Budget', // Koreksi typo dari 'Katagori'
                 style: TextStyle(
                   color: SakuColors.black,
                   fontSize: 18,
@@ -178,22 +179,17 @@ class BudgetFormDialogState extends State<BudgetFormDialog> {
     super.dispose();
   }
 
-  void _pickCategory() {
-    showModalBottomSheet<void>(
+  // INTEGRASI BARU: Memanggil picker bottom sheet secara statis & asinkronus
+  void _pickCategory() async {
+    final selected = await CategoryPickerComponent.showAsBottomSheet(
       context: context,
-      backgroundColor: SakuColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CategoryPickerSheet(
-        selectedCategory: _category,
-        kind: CategoryKind.expense,
-        onSelected: (category) {
-          setState(() => _category = category);
-          Navigator.of(context).pop();
-        },
-      ),
+      selectedCategory: _category,
+      kind: CategoryKind.expense, // Budget biasanya berbasis pos pengeluaran
     );
+
+    if (selected != null && mounted) {
+      setState(() => _category = selected);
+    }
   }
 
   void _save() {

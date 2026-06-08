@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:saku_pengeluaran/features/dashboard/widgets/add_note_page.dart';
 import 'dashboard_shared.dart';
-import 'add_note_page.dart';
+import 'category_picker_component.dart'; // Menggunakan berkas picker komponen terpadu Anda
 
 class EditTransactionDashboard extends StatefulWidget {
   const EditTransactionDashboard({
@@ -57,17 +59,17 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
     super.dispose();
   }
 
+  // BAGIAN YANG DIUBAH: Menghubungkan ke sistem bottom sheet baru secara asinkronus
   Future<void> _openCategoryPicker() async {
-    final category = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => CategorySelectionPage(
-          selectedCategory: _category,
-          kind: _isIncome ? CategoryKind.income : CategoryKind.expense,
-        ),
-      ),
+    final selected = await CategoryPickerComponent.showAsBottomSheet(
+      context: context,
+      selectedCategory: _category,
+      kind: _isIncome ? CategoryKind.income : CategoryKind.expense,
     );
-    if (category == null) return;
-    setState(() => _category = category);
+
+    if (selected != null && mounted) {
+      setState(() => _category = selected);
+    }
   }
 
   void _save() {
@@ -101,6 +103,7 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
     );
   }
 
+  // BAGIAN UI (TIDAK ADA PERUBAHAN SAMA SEKALI)
   @override
   Widget build(BuildContext context) {
     final item = _item;
