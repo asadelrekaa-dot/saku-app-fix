@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -55,7 +57,8 @@ class _DashboardPageState extends State<DashboardPage> {
               'Tekan lama area kosong di homescreen, pilih Widget, lalu pilih Saku Ringkasan.',
         );
       }
-    } catch (_) {
+    } catch (e, s) {
+      log('[DashboardPage] requestPinHomeWidget error', error: e, stackTrace: s);
       if (!mounted) return;
       showInfoDialog(
         context,
@@ -70,7 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => DashboardBloc(openAddNote: widget.openAddNote)
-        ..add(const DashboardStarted()),
+        ..add(const DashboardEvent.started()),
       child: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           final bloc = context.read<DashboardBloc>();
@@ -106,14 +109,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           context: context,
                           builder: (context) => BudgetFormDialog(
                             onSave: (item) {
-                              bloc.add(DashboardBudgetAdded(item));
+                              bloc.add(DashboardEvent.budgetAdded(item));
                               Navigator.of(context).pop();
                             },
                           ),
                         );
                         return;
                       }
-                      bloc.add(const DashboardAddNoteShown());
+                      bloc.add(const DashboardEvent.addNoteShown());
                     },
                     backgroundColor: SakuColors.mango500,
                     foregroundColor: SakuColors.white,
@@ -133,7 +136,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: NavigationBar(
                           selectedIndex: state.currentIndex,
                           onDestinationSelected: (index) {
-                            bloc.add(DashboardTabSelected(index));
+                            bloc.add(DashboardEvent.tabSelected(index));
                           },
                           indicatorColor: SakuColors.blue100,
                           destinations: const [

@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_widget/home_widget.dart';
 
+import 'core/api/laravel_api_service.dart';
+import 'core/bloc/saku_bloc_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/register_page.dart';
@@ -14,6 +18,7 @@ import 'features/splash/splash_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = SakuBlocObserver();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -55,14 +60,14 @@ class _SakuAppState extends State<SakuApp> {
 
     _widgetClickSubscription = HomeWidget.widgetClicked.listen(
       _handleWidgetUri,
-      onError: (_) {},
+      onError: (e) => log('[main] widgetClicked error', error: e),
     );
 
     try {
       final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       _handleWidgetUri(uri);
-    } catch (_) {
-      // The home widget platform channel is only available on installed apps.
+    } catch (e, s) {
+      log('[main] initiallyLaunchedFromHomeWidget error', error: e, stackTrace: s);
     }
   }
 
@@ -103,9 +108,21 @@ class _SakuAppState extends State<SakuApp> {
       initialRoute: SplashPage.routeName,
       routes: {
         SplashPage.routeName: (_) => SplashPage(
-              onFinished: () {
+              onFinished: () async {
                 if (_openedFromHomeWidget) return;
-                _navigatorKey.currentState?.pushReplacementNamed(nextRoute);
+                final savedUser = await LaravelApiService.instance.getSavedUser();
+                if (savedUser != null) {
+                  _navigatorKey.currentState?.pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => DashboardPage(
+                        userName: savedUser.name,
+                        userEmail: savedUser.email,
+                      ),
+                    ),
+                  );
+                } else {
+                  _navigatorKey.currentState?.pushReplacementNamed(nextRoute);
+                }
               },
             ),
         OnboardingPage.routeName: (_) => const OnboardingPage(),

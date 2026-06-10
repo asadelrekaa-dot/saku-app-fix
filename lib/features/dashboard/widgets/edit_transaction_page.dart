@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:saku_pengeluaran/features/dashboard/widgets/add_note_page.dart';
+import 'add_note_page.dart';
 import 'dashboard_shared.dart';
-import 'category_picker_component.dart'; // Menggunakan berkas picker komponen terpadu Anda
+import 'category_picker_component.dart';
 
 class EditTransactionDashboard extends StatefulWidget {
   const EditTransactionDashboard({

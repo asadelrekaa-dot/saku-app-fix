@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../widgets/dashboard_shared.dart'; // Pastikan path ini sesuai untuk membaca AddNoteMode, DashboardTransaction, dll.
+
+import '../../../../core/utils/expression_calculator.dart';
+import '../../widgets/dashboard_shared.dart';
 
 part 'add_note_event.dart';
 part 'add_note_state.dart';
@@ -60,7 +62,7 @@ class AddNoteBloc extends Bloc<AddNoteEvent, AddNoteState> {
     } 
     // 4. Tombol Sama Dengan (=) / Eksekusi Hasil Hitung
     else if (key == '=') {
-      currentAmount = _calculateExpression(currentAmount);
+      currentAmount = ExpressionCalculator.evaluate(currentAmount);
     } 
     // 5. Input Angka (0-9) atau Ribuan (000)
     else if (RegExp(r'^\d+$').hasMatch(key)) {
@@ -85,7 +87,7 @@ class AddNoteBloc extends Bloc<AddNoteEvent, AddNoteState> {
 
   void _onSaveSubmitted(_SaveSubmitted event, Emitter<AddNoteState> emit) {
     // Jalankan kalkulasi otomatis terlebih dahulu jika ada rumus yang belum diselesaikan (misal: '5000+2000' langsung klik Simpan)
-    final finalAmountStr = _calculateExpression(state.amount);
+    final finalAmountStr = ExpressionCalculator.evaluate(state.amount);
     final numericAmount = int.tryParse(finalAmountStr) ?? 0;
     
     // Validasi input nominal kosong atau nol
@@ -114,41 +116,4 @@ class AddNoteBloc extends Bloc<AddNoteEvent, AddNoteState> {
     }
   }
 
-  /// Evaluator Rumus Matematika Internal untuk memproses ekspresi string (+, -, x)
-  String _calculateExpression(String expression) {
-    try {
-      // Bersihkan operator menggantung di ujung string sebelum kalkulasi (misal: '10000+')
-      String cleanExpr = expression;
-      if (cleanExpr.endsWith('+') || cleanExpr.endsWith('-') || cleanExpr.endsWith('x')) {
-        cleanExpr = cleanExpr.substring(0, cleanExpr.length - 1);
-      }
-
-      // Ganti visual perkalian 'x' menjadi '*' agar ramah parsing komputer
-      String parsedExpr = cleanExpr.replaceAll('x', '*');
-      
-      // Tokenisasi memisahkan angka dan operator menggunakan Regex
-      final RegExp regExp = RegExp(r'(\d+)|([+\-*])');
-      final matches = regExp.allMatches(parsedExpr).map((m) => m.group(0)!).toList();
-
-      if (matches.isEmpty) return '0';
-
-      // Mulai kalkulasi dari angka index pertama
-      int total = int.tryParse(matches[0]) ?? 0;
-      
-      // Lakukan loop secara melompat untuk mengeksekusi urutan operasi berpasangan (operator -> angka berikutnya)
-      for (int i = 1; i < matches.length; i += 2) {
-        if (i + 1 >= matches.length) break;
-        String op = matches[i];
-        int nextValue = int.tryParse(matches[i + 1]) ?? 0;
-
-        if (op == '+') total += nextValue;
-        if (op == '-') total -= nextValue;
-        if (op == '*') total *= nextValue;
-      }
-
-      return total.toString();
-    } catch (e) {
-      return '0';
-    }
-  }
 }
