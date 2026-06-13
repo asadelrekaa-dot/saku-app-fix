@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,6 +73,8 @@ class LaravelApiService {
   );
   static const _tokenKey = 'saku_laravel_token';
   static const _walletIdKey = 'saku_laravel_wallet_id';
+  static const _userNameKey = 'saku_user_name';
+  static const _userEmailKey = 'saku_user_email';
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
@@ -112,12 +115,14 @@ class LaravelApiService {
   Future<void> logout() async {
     try {
       await _post('/logout', body: const {});
-    } catch (_) {
-      // Token may already be invalid or the local API may be offline.
+    } catch (e, s) {
+      log('[LaravelApiService] logout error', error: e, stackTrace: s);
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_walletIdKey);
+    await prefs.remove(_userNameKey);
+    await prefs.remove(_userEmailKey);
   }
 
   Future<int> ensureDefaultWallet() async {
@@ -165,6 +170,38 @@ class LaravelApiService {
     return SyncedTransaction(apiId: apiId, apiType: apiType);
   }
 
+  Future<void> deleteTransaction({
+    required int? apiId,
+    required String? apiType,
+  }) async {
+    if (apiId == null || apiType == null) return;
+    await _delete('/$apiType/$apiId');
+  }
+
+  Future<void> updateTransaction({
+    required int? apiId,
+    required String? apiType,
+    required LaravelTransactionDraft item,
+  }) async {
+    if (apiId == null || apiType == null) return;
+    final walletId = await _walletId();
+    final amount = item.amountValue.abs();
+    final body = <String, Object?>{
+      'wallet_id': walletId,
+      'waktu': DateTime.now().toIso8601String(),
+      'notes': item.note,
+      'nominal': amount,
+    };
+
+    if (apiType == 'income' || apiType == 'outcome') {
+      body['kategori_id'] = _categoryId(item.title, item.amountValue > 0);
+    } else {
+      body['nama'] = _personName(item);
+    }
+
+    await _put('/$apiType/$apiId', body: body);
+  }
+
   Future<void> markSettled({
     required int? apiId,
     required String? apiType,
@@ -178,6 +215,15 @@ class LaravelApiService {
     );
   }
 
+  Future<({String name, String email})?> getSavedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    if (token == null || token.isEmpty) return null;
+    final name = prefs.getString(_userNameKey) ?? 'Pengguna';
+    final email = prefs.getString(_userEmailKey) ?? '';
+    return (name: name, email: email);
+  }
+
   Future<LaravelAuthResult> _storeAuth(Map<String, dynamic> data) async {
     final token = (data['access_token'] ?? data['token'] ?? '').toString();
     if (token.isEmpty) {
@@ -189,17 +235,41 @@ class LaravelApiService {
       throw const LaravelApiException('Data user tidak ditemukan dari API.');
     }
 
+    final user = LaravelUser.fromJson(userData);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
+    await prefs.setString(_userNameKey, user.name);
+    await prefs.setString(_userEmailKey, user.email);
     return LaravelAuthResult(
       token: token,
-      user: LaravelUser.fromJson(userData),
+      user: user,
     );
   }
 
   Future<int> _walletId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_walletIdKey) ?? 1;
+  }
+
+  Future<void> _delete(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final response = await http
+        .delete(_uri(path), headers: headers)
+        .timeout(const Duration(seconds: 30));
+    final decoded = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LaravelApiException(
+        _messageFrom(decoded) ?? 'API error ${response.statusCode}',
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _post(
@@ -238,8 +308,12 @@ class LaravelApiService {
 
     final requestBody = jsonEncode(body);
     final response = method == 'PUT'
-        ? await http.put(_uri(path), headers: headers, body: requestBody)
-        : await http.post(_uri(path), headers: headers, body: requestBody);
+        ? await http
+            .put(_uri(path), headers: headers, body: requestBody)
+            .timeout(const Duration(seconds: 30))
+        : await http
+            .post(_uri(path), headers: headers, body: requestBody)
+            .timeout(const Duration(seconds: 30));
     final decoded = _decode(response.body);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

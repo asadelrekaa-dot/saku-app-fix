@@ -48,21 +48,22 @@ class AddNoteDashboard extends StatelessWidget {
             final name = _nameController.text.trim();
             final note = _noteController.text.trim();
 
-            onSave(
-              DashboardTransaction(
-                title: title,
-                note: note.isNotEmpty
-                    ? note
-                    : state.isDailyNote
-                        ? 'Catatan $title'
-                        : '${state.isLoan ? 'Pinjaman ke' : 'Hutang ke'} ${name.isEmpty ? 'Nama' : name}',
-                amountValue: isMoneyOut ? -numericAmount : numericAmount,
-                date: '21 April 2026',
-                time: 'Baru saja',
-                icon: categoryIcon(title),
-                color: isMoneyOut ? SakuColors.danger : SakuColors.success,
-              ),
-            );
+              final now = DateTime.now();
+              onSave(
+                DashboardTransaction(
+                  title: title,
+                  note: note.isNotEmpty
+                      ? note
+                      : state.isDailyNote
+                          ? 'Catatan $title'
+                          : '${state.isLoan ? 'Pinjaman ke' : 'Hutang ke'} ${name.isEmpty ? 'Nama' : name}',
+                  amountValue: isMoneyOut ? -numericAmount : numericAmount,
+                  date: formatDate(now),
+                  time: 'Baru saja',
+                  icon: categoryIcon(title),
+                  color: isMoneyOut ? SakuColors.danger : SakuColors.success,
+                ),
+              );
           }
         },
         child: BlocBuilder<AddNoteBloc, AddNoteState>(
@@ -78,22 +79,21 @@ class AddNoteDashboard extends StatelessWidget {
                         mode: state.mode,
                         onSwitchMode: (newMode) {
                           context.read<AddNoteBloc>().add(AddNoteEvent.modeChanged(newMode));
-                          onSwitchMode(newMode);
                         },
                       ),
-                      const SizedBox(height: 24),
-                      const Row(
+                      SizedBox(height: 24),
+                      Row(
                         children: [
                           Expanded(
                             child: _PillField(
-                              text: '21 April 2026',
+                              text: formatDate(DateTime.now()),
                               icon: Icons.calendar_month_rounded,
                             ),
                           ),
                           SizedBox(width: 20),
                           Expanded(
                             child: _PillField(
-                              text: '8:21 AM',
+                              text: formatTime(DateTime.now()),
                               icon: Icons.access_time_filled_rounded,
                             ),
                           ),
@@ -140,10 +140,10 @@ class AddNoteDashboard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 20),
-                            const Expanded(
+                            Expanded(
                               child: _LabeledPillField(
                                 label: 'Jatuh Tempo',
-                                text: '12 Juni 2026',
+                                text: formatDate(DateTime.now().add(const Duration(days: 30))),
                                 icon: Icons.calendar_month_rounded,
                               ),
                             ),
@@ -581,48 +581,45 @@ class _CalculatorPad extends StatelessWidget {
 
   final ValueChanged<String> onTap;
 
-  static const _rows = [
-    ['x', '-', '+', 'back'],
-    ['1', '2', '3', 'C'],
-    ['4', '5', '6', '='],
-    ['7', '8', '9', 'Simpan'],
-    ['', '0', '000', 'Simpan'],
+  static const _gridRows = [
+    ['7', '8', '9', 'C'],
+    ['4', '5', '6', 'back'],
+    ['1', '2', '3', '+'],
+    ['0', '000', '=', '-'],
   ];
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 220,
       child: Column(
-        children: List.generate(_rows.length, (rowIndex) {
-          return Expanded(
-            child: Row(
-              children: List.generate(_rows[rowIndex].length, (index) {
-                final label = _rows[rowIndex][index];
-                if (label.isEmpty) {
-                  return const Expanded(child: SizedBox.shrink());
-                }
-                if (label == 'Simpan' && rowIndex == 4) {
-                  return const Expanded(child: SizedBox.shrink());
-                }
-                final rowSpan = label == 'Simpan';
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(3),
-                    child: SizedBox(
-                      height: rowSpan ? double.infinity : null,
+        children: [
+          for (final row in _gridRows)
+            Expanded(
+              child: Row(
+                children: row.map((label) {
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(3),
                       child: _KeypadButton(
                         label: label,
-                        tall: rowSpan,
                         onTap: () => onTap(label),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }).toList(),
+              ),
             ),
-          );
-        }),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: _KeypadButton(
+                label: 'Simpan',
+                onTap: () => onTap('Simpan'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -632,21 +629,19 @@ class _KeypadButton extends StatelessWidget {
   const _KeypadButton({
     required this.label,
     required this.onTap,
-    this.tall = false,
   });
 
   final String label;
   final VoidCallback onTap;
-  final bool tall;
 
   @override
   Widget build(BuildContext context) {
     final isAction = label == '=' || label == 'Simpan';
-    final isMuted = label == 'back' || label == 'C' || label == 'Simpan';
+    final isMuted = label == 'back' || label == 'C';
 
     return Material(
       color: isAction
-          ? (label == '=' ? SakuColors.blue100 : SakuColors.neutral300)
+          ? (label == '=' ? SakuColors.blue100 : SakuColors.blue300)
           : (isMuted ? SakuColors.neutral100 : SakuColors.white),
       borderRadius: BorderRadius.circular(6),
       child: InkWell(

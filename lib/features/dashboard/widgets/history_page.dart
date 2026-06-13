@@ -1,5 +1,4 @@
 import 'dashboard_shared.dart';
-import '../bloc/add_note/add_note_bloc.dart';
 import 'category_picker_component.dart'; // Tambahkan ini di bagian atas file kamu
 
 class HistoryDashboard extends StatefulWidget {

@@ -29,43 +29,43 @@ class DashboardContent extends StatelessWidget {
     return switch (state.surface) {
       DashboardSurface.budget => BudgetDashboard(
           budgets: state.budgets,
-          onBack: () => bloc.add(const DashboardMainShown()),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
         ),
       DashboardSurface.insight => InsightDashboard(
-          onBack: () => bloc.add(const DashboardMainShown()),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
         ),
       DashboardSurface.notifications => NotificationsDashboard(
-          onBack: () => bloc.add(const DashboardMainShown()),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
         ),
       DashboardSurface.addExpense => AddNoteDashboard(
           mode: AddNoteMode.expense,
-          onBack: () => bloc.add(const DashboardMainShown()),
-          onSwitchMode: (mode) => bloc.add(DashboardAddNoteShown(mode)),
-          onSave: (item) => bloc.add(DashboardTransactionAdded(item)),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
+          onSwitchMode: (mode) => bloc.add(DashboardEvent.addNoteShown(mode)),
+          onSave: (item) => bloc.add(DashboardEvent.transactionAdded(item)),
         ),
       DashboardSurface.addIncome => AddNoteDashboard(
           mode: AddNoteMode.income,
-          onBack: () => bloc.add(const DashboardMainShown()),
-          onSwitchMode: (mode) => bloc.add(DashboardAddNoteShown(mode)),
-          onSave: (item) => bloc.add(DashboardTransactionAdded(item)),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
+          onSwitchMode: (mode) => bloc.add(DashboardEvent.addNoteShown(mode)),
+          onSave: (item) => bloc.add(DashboardEvent.transactionAdded(item)),
         ),
       DashboardSurface.addDebt => AddNoteDashboard(
           mode: AddNoteMode.debt,
-          onBack: () => bloc.add(const DashboardMainShown()),
-          onSwitchMode: (mode) => bloc.add(DashboardAddNoteShown(mode)),
-          onSave: (item) => bloc.add(DashboardTransactionAdded(item)),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
+          onSwitchMode: (mode) => bloc.add(DashboardEvent.addNoteShown(mode)),
+          onSave: (item) => bloc.add(DashboardEvent.transactionAdded(item)),
         ),
       DashboardSurface.addLoan => AddNoteDashboard(
           mode: AddNoteMode.loan,
-          onBack: () => bloc.add(const DashboardMainShown()),
-          onSwitchMode: (mode) => bloc.add(DashboardAddNoteShown(mode)),
-          onSave: (item) => bloc.add(DashboardTransactionAdded(item)),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
+          onSwitchMode: (mode) => bloc.add(DashboardEvent.addNoteShown(mode)),
+          onSave: (item) => bloc.add(DashboardEvent.transactionAdded(item)),
         ),
       DashboardSurface.editTransaction => EditTransactionDashboard(
           item: state.editingTransaction,
-          onBack: () => bloc.add(const DashboardMainShown()),
+          onBack: () => bloc.add(const DashboardEvent.mainShown()),
           onSave: (oldItem, newItem) => bloc.add(
-            DashboardTransactionUpdated(
+            DashboardEvent.transactionUpdated(
               oldItem: oldItem,
               newItem: newItem,
             ),
@@ -75,26 +75,26 @@ class DashboardContent extends StatelessWidget {
           0 => HomeDashboard(
               userName: userName,
               transactions: state.transactions,
-              onOpenHistory: () => bloc.add(const DashboardTabSelected(1)),
+              onOpenHistory: () => bloc.add(const DashboardEvent.tabSelected(1)),
               onOpenBudget: () => bloc
-                  .add(const DashboardSurfaceShown(DashboardSurface.budget)),
+                  .add(const DashboardEvent.surfaceShown(DashboardSurface.budget)),
               onOpenInsight: () => bloc.add(
-                const DashboardSurfaceShown(DashboardSurface.insight),
+                const DashboardEvent.surfaceShown(DashboardSurface.insight),
               ),
             ),
           1 => HistoryDashboard(
               transactions: state.transactions,
-              onDelete: (item) => bloc.add(DashboardTransactionDeleted(item)),
-              onEdit: (item) => bloc.add(DashboardEditTransactionOpened(item)),
+              onDelete: (item) => bloc.add(DashboardEvent.transactionDeleted(item)),
+              onEdit: (item) => bloc.add(DashboardEvent.editTransactionOpened(item)),
               onMarkSettled: (item) =>
-                  bloc.add(DashboardTransactionSettled(item)),
+                  bloc.add(DashboardEvent.transactionSettled(item)),
             ),
           2 => ChartDashboard(transactions: state.transactions),
           _ => ProfileDashboard(
               initialName: userName,
               initialEmail: userEmail,
               onOpenNotifications: () => bloc.add(
-                const DashboardSurfaceShown(DashboardSurface.notifications),
+                const DashboardEvent.surfaceShown(DashboardSurface.notifications),
               ),
               onAddHomeWidget: onRequestHomeWidget,
             ),
