@@ -1,26 +1,26 @@
 import 'dart:convert';
 
-class HutangResponseModel {
+class BeriPinjamanResponseModel {
   final String? status;
   final String? message;
-  final Hutang? data;
+  final BeriPinjaman? data;
 
-  HutangResponseModel({
+  BeriPinjamanResponseModel({
     this.status,
     this.message,
     this.data,
   });
 
-  factory HutangResponseModel.fromJson(String str) =>
-      HutangResponseModel.fromMap(json.decode(str));
+  factory BeriPinjamanResponseModel.fromJson(String str) =>
+      BeriPinjamanResponseModel.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory HutangResponseModel.fromMap(Map<String, dynamic> json) =>
-      HutangResponseModel(
+  factory BeriPinjamanResponseModel.fromMap(Map<String, dynamic> json) =>
+      BeriPinjamanResponseModel(
         status: json["status"],
         message: json["message"],
-        data: json["data"] == null ? null : Hutang.fromMap(json["data"]),
+        data: json["data"] == null ? null : BeriPinjaman.fromMap(json["data"]),
       );
 
   Map<String, dynamic> toMap() => {
@@ -30,7 +30,7 @@ class HutangResponseModel {
       };
 }
 
-class Hutang {
+class BeriPinjaman {
   final int? userId;
   final int? walletId;
   final DateTime? waktu;
@@ -43,7 +43,7 @@ class Hutang {
   final int? id;
   final Deadline? deadline;
 
-  Hutang({
+  BeriPinjaman({
     this.userId,
     this.walletId,
     this.waktu,
@@ -57,11 +57,12 @@ class Hutang {
     this.deadline,
   });
 
-  factory Hutang.fromJson(String str) => Hutang.fromMap(json.decode(str));
+  factory BeriPinjaman.fromJson(String str) =>
+      BeriPinjaman.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory Hutang.fromMap(Map<String, dynamic> json) => Hutang(
+  factory BeriPinjaman.fromMap(Map<String, dynamic> json) => BeriPinjaman(
         userId: json["user_id"],
         walletId: json["wallet_id"],
         waktu: json["waktu"] == null ? null : DateTime.parse(json["waktu"]),
@@ -76,8 +77,6 @@ class Hutang {
             ? null
             : DateTime.parse(json["created_at"]),
         id: json["id"],
-
-        // TAMBAHAN
         deadline: json["deadline"] == null
             ? null
             : Deadline.fromMap(json["deadline"]),
@@ -94,34 +93,31 @@ class Hutang {
         "updated_at": updatedAt?.toIso8601String(),
         "created_at": createdAt?.toIso8601String(),
         "id": id,
-
-        // TAMBAHAN
         "deadline": deadline?.toMap(),
       };
 }
 
-// CLASS BARU
 class Deadline {
   final int? id;
-  final int? hutangId;
+  final int? beriPinjamanId;
   final DateTime? deadline;
 
   Deadline({
     this.id,
-    this.hutangId,
+    this.beriPinjamanId,
     this.deadline,
   });
 
   factory Deadline.fromMap(Map<String, dynamic> json) => Deadline(
         id: json["id"],
-        hutangId: json["hutang_id"],
+        beriPinjamanId: json["beri_pinjaman_id"],
         deadline:
             json["deadline"] == null ? null : DateTime.parse(json["deadline"]),
       );
 
   Map<String, dynamic> toMap() => {
         "id": id,
-        "hutang_id": hutangId,
+        "beri_pinjaman_id": beriPinjamanId,
         "deadline": deadline?.toIso8601String(),
       };
 }

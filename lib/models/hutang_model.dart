@@ -7,6 +7,7 @@ class HutangModel {
   final String? catatan;
   final int nominal;
   final String status;
+  final String? deadline;
   final String? createdAt;
   final String? updatedAt;
 
@@ -19,6 +20,7 @@ class HutangModel {
     this.catatan,
     required this.nominal,
     required this.status,
+    this.deadline,
     this.createdAt,
     this.updatedAt,
   });
@@ -33,6 +35,7 @@ class HutangModel {
       catatan: map['catatan'],
       nominal: map['nominal'],
       status: map['status'],
+      deadline: map['deadline'], 
       createdAt: map['created_at'],
       updatedAt: map['updated_at'],
     );
@@ -47,6 +50,7 @@ class HutangModel {
       'catatan': catatan,
       'nominal': nominal,
       'status': status,
+      'deadline': deadline,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };

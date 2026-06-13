@@ -79,6 +79,7 @@ class TransactionLocalDatasource {
       catatan TEXT,
       nominal INTEGER,
       status TEXT,
+      deadline DATETIME,
       created_at TEXT,
       updated_at TEXT
       )
@@ -94,6 +95,7 @@ class TransactionLocalDatasource {
       catatan TEXT,
       nominal INTEGER,
       status TEXT,
+      deadline DATETIME,
       created_at TEXT,
       updated_at TEXT
       )
