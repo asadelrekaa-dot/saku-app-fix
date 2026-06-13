@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'dashboard_bloc.dart';
+part of 'dashboard_event.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -25,6 +25,7 @@ mixin _$DashboardEvent {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -42,6 +43,7 @@ mixin _$DashboardEvent {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -59,6 +61,7 @@ mixin _$DashboardEvent {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -70,54 +73,56 @@ mixin _$DashboardEvent {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -165,7 +170,7 @@ class __$$DashboardStartedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardStartedImpl implements _DashboardStarted {
+class _$DashboardStartedImpl implements DashboardStarted {
   const _$DashboardStartedImpl();
 
   @override
@@ -192,6 +197,7 @@ class _$DashboardStartedImpl implements _DashboardStarted {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -212,6 +218,7 @@ class _$DashboardStartedImpl implements _DashboardStarted {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -232,6 +239,7 @@ class _$DashboardStartedImpl implements _DashboardStarted {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -249,21 +257,21 @@ class _$DashboardStartedImpl implements _DashboardStarted {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return started(this);
@@ -272,18 +280,19 @@ class _$DashboardStartedImpl implements _DashboardStarted {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return started?.call(this);
   }
@@ -291,18 +300,19 @@ class _$DashboardStartedImpl implements _DashboardStarted {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (started != null) {
@@ -312,8 +322,8 @@ class _$DashboardStartedImpl implements _DashboardStarted {
   }
 }
 
-abstract class _DashboardStarted implements DashboardEvent {
-  const factory _DashboardStarted() = _$DashboardStartedImpl;
+abstract class DashboardStarted implements DashboardEvent {
+  const factory DashboardStarted() = _$DashboardStartedImpl;
 }
 
 /// @nodoc
@@ -337,7 +347,7 @@ class __$$DashboardMainShownImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardMainShownImpl implements _DashboardMainShown {
+class _$DashboardMainShownImpl implements DashboardMainShown {
   const _$DashboardMainShownImpl();
 
   @override
@@ -364,6 +374,7 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -384,6 +395,7 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -404,6 +416,7 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -421,21 +434,21 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return mainShown(this);
@@ -444,18 +457,19 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return mainShown?.call(this);
   }
@@ -463,18 +477,19 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (mainShown != null) {
@@ -484,8 +499,8 @@ class _$DashboardMainShownImpl implements _DashboardMainShown {
   }
 }
 
-abstract class _DashboardMainShown implements DashboardEvent {
-  const factory _DashboardMainShown() = _$DashboardMainShownImpl;
+abstract class DashboardMainShown implements DashboardEvent {
+  const factory DashboardMainShown() = _$DashboardMainShownImpl;
 }
 
 /// @nodoc
@@ -524,7 +539,7 @@ class __$$DashboardSurfaceShownImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
+class _$DashboardSurfaceShownImpl implements DashboardSurfaceShown {
   const _$DashboardSurfaceShownImpl(this.surface);
 
   @override
@@ -565,6 +580,7 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -585,6 +601,7 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -605,6 +622,7 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -622,21 +640,21 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return surfaceShown(this);
@@ -645,18 +663,19 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return surfaceShown?.call(this);
   }
@@ -664,18 +683,19 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (surfaceShown != null) {
@@ -685,8 +705,8 @@ class _$DashboardSurfaceShownImpl implements _DashboardSurfaceShown {
   }
 }
 
-abstract class _DashboardSurfaceShown implements DashboardEvent {
-  const factory _DashboardSurfaceShown(final DashboardSurface surface) =
+abstract class DashboardSurfaceShown implements DashboardEvent {
+  const factory DashboardSurfaceShown(final DashboardSurface surface) =
       _$DashboardSurfaceShownImpl;
 
   DashboardSurface get surface;
@@ -724,7 +744,7 @@ class __$$DashboardAddNoteShownImplCopyWithImpl<$Res>
     Object? mode = null,
   }) {
     return _then(_$DashboardAddNoteShownImpl(
-      null == mode
+      mode: null == mode
           ? _value.mode
           : mode // ignore: cast_nullable_to_non_nullable
               as AddNoteMode,
@@ -734,8 +754,8 @@ class __$$DashboardAddNoteShownImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
-  const _$DashboardAddNoteShownImpl([this.mode = AddNoteMode.expense]);
+class _$DashboardAddNoteShownImpl implements DashboardAddNoteShown {
+  const _$DashboardAddNoteShownImpl({this.mode = AddNoteMode.expense});
 
   @override
   @JsonKey()
@@ -776,6 +796,7 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -796,6 +817,7 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -816,6 +838,7 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -833,21 +856,21 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return addNoteShown(this);
@@ -856,18 +879,19 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return addNoteShown?.call(this);
   }
@@ -875,18 +899,19 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (addNoteShown != null) {
@@ -896,8 +921,8 @@ class _$DashboardAddNoteShownImpl implements _DashboardAddNoteShown {
   }
 }
 
-abstract class _DashboardAddNoteShown implements DashboardEvent {
-  const factory _DashboardAddNoteShown([final AddNoteMode mode]) =
+abstract class DashboardAddNoteShown implements DashboardEvent {
+  const factory DashboardAddNoteShown({final AddNoteMode mode}) =
       _$DashboardAddNoteShownImpl;
 
   AddNoteMode get mode;
@@ -944,7 +969,7 @@ class __$$DashboardTabSelectedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
+class _$DashboardTabSelectedImpl implements DashboardTabSelected {
   const _$DashboardTabSelectedImpl(this.index);
 
   @override
@@ -986,6 +1011,7 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -1006,6 +1032,7 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -1026,6 +1053,7 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -1043,21 +1071,21 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return tabSelected(this);
@@ -1066,18 +1094,19 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return tabSelected?.call(this);
   }
@@ -1085,18 +1114,19 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (tabSelected != null) {
@@ -1106,8 +1136,8 @@ class _$DashboardTabSelectedImpl implements _DashboardTabSelected {
   }
 }
 
-abstract class _DashboardTabSelected implements DashboardEvent {
-  const factory _DashboardTabSelected(final int index) =
+abstract class DashboardTabSelected implements DashboardEvent {
+  const factory DashboardTabSelected(final int index) =
       _$DashboardTabSelectedImpl;
 
   int get index;
@@ -1156,7 +1186,7 @@ class __$$DashboardTransactionAddedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
+class _$DashboardTransactionAddedImpl implements DashboardTransactionAdded {
   const _$DashboardTransactionAddedImpl(this.item);
 
   @override
@@ -1197,6 +1227,7 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -1217,6 +1248,7 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -1237,6 +1269,7 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -1254,21 +1287,21 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return transactionAdded(this);
@@ -1277,18 +1310,19 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return transactionAdded?.call(this);
   }
@@ -1296,18 +1330,19 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (transactionAdded != null) {
@@ -1317,8 +1352,8 @@ class _$DashboardTransactionAddedImpl implements _DashboardTransactionAdded {
   }
 }
 
-abstract class _DashboardTransactionAdded implements DashboardEvent {
-  const factory _DashboardTransactionAdded(final DashboardTransaction item) =
+abstract class DashboardTransactionAdded implements DashboardEvent {
+  const factory DashboardTransactionAdded(final DashboardTransaction item) =
       _$DashboardTransactionAddedImpl;
 
   DashboardTransaction get item;
@@ -1365,7 +1400,7 @@ class __$$DashboardBudgetAddedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
+class _$DashboardBudgetAddedImpl implements DashboardBudgetAdded {
   const _$DashboardBudgetAddedImpl(this.item);
 
   @override
@@ -1407,6 +1442,7 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -1427,6 +1463,7 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -1447,6 +1484,7 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -1464,21 +1502,21 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return budgetAdded(this);
@@ -1487,18 +1525,19 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return budgetAdded?.call(this);
   }
@@ -1506,18 +1545,19 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (budgetAdded != null) {
@@ -1527,8 +1567,8 @@ class _$DashboardBudgetAddedImpl implements _DashboardBudgetAdded {
   }
 }
 
-abstract class _DashboardBudgetAdded implements DashboardEvent {
-  const factory _DashboardBudgetAdded(final DashboardBudget item) =
+abstract class DashboardBudgetAdded implements DashboardEvent {
+  const factory DashboardBudgetAdded(final DashboardBudget item) =
       _$DashboardBudgetAddedImpl;
 
   DashboardBudget get item;
@@ -1537,6 +1577,222 @@ abstract class _DashboardBudgetAdded implements DashboardEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$DashboardBudgetAddedImplCopyWith<_$DashboardBudgetAddedImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$DashboardBudgetDeletedImplCopyWith<$Res> {
+  factory _$$DashboardBudgetDeletedImplCopyWith(
+          _$DashboardBudgetDeletedImpl value,
+          $Res Function(_$DashboardBudgetDeletedImpl) then) =
+      __$$DashboardBudgetDeletedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({DashboardBudget item});
+}
+
+/// @nodoc
+class __$$DashboardBudgetDeletedImplCopyWithImpl<$Res>
+    extends _$DashboardEventCopyWithImpl<$Res, _$DashboardBudgetDeletedImpl>
+    implements _$$DashboardBudgetDeletedImplCopyWith<$Res> {
+  __$$DashboardBudgetDeletedImplCopyWithImpl(
+      _$DashboardBudgetDeletedImpl _value,
+      $Res Function(_$DashboardBudgetDeletedImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of DashboardEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? item = null,
+  }) {
+    return _then(_$DashboardBudgetDeletedImpl(
+      null == item
+          ? _value.item
+          : item // ignore: cast_nullable_to_non_nullable
+              as DashboardBudget,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _$DashboardBudgetDeletedImpl implements DashboardBudgetDeleted {
+  const _$DashboardBudgetDeletedImpl(this.item);
+
+  @override
+  final DashboardBudget item;
+
+  @override
+  String toString() {
+    return 'DashboardEvent.budgetDeleted(item: $item)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$DashboardBudgetDeletedImpl &&
+            (identical(other.item, item) || other.item == item));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, item);
+
+  /// Create a copy of DashboardEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$DashboardBudgetDeletedImplCopyWith<_$DashboardBudgetDeletedImpl>
+      get copyWith => __$$DashboardBudgetDeletedImplCopyWithImpl<
+          _$DashboardBudgetDeletedImpl>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() started,
+    required TResult Function() mainShown,
+    required TResult Function(DashboardSurface surface) surfaceShown,
+    required TResult Function(AddNoteMode mode) addNoteShown,
+    required TResult Function(int index) tabSelected,
+    required TResult Function(DashboardTransaction item) transactionAdded,
+    required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
+    required TResult Function(DashboardTransaction item) transactionDeleted,
+    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item) editTransactionOpened,
+    required TResult Function(
+            DashboardTransaction oldItem, DashboardTransaction newItem)
+        transactionUpdated,
+  }) {
+    return budgetDeleted(item);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? started,
+    TResult? Function()? mainShown,
+    TResult? Function(DashboardSurface surface)? surfaceShown,
+    TResult? Function(AddNoteMode mode)? addNoteShown,
+    TResult? Function(int index)? tabSelected,
+    TResult? Function(DashboardTransaction item)? transactionAdded,
+    TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
+    TResult? Function(DashboardTransaction item)? transactionDeleted,
+    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item)? editTransactionOpened,
+    TResult? Function(
+            DashboardTransaction oldItem, DashboardTransaction newItem)?
+        transactionUpdated,
+  }) {
+    return budgetDeleted?.call(item);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? started,
+    TResult Function()? mainShown,
+    TResult Function(DashboardSurface surface)? surfaceShown,
+    TResult Function(AddNoteMode mode)? addNoteShown,
+    TResult Function(int index)? tabSelected,
+    TResult Function(DashboardTransaction item)? transactionAdded,
+    TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
+    TResult Function(DashboardTransaction item)? transactionDeleted,
+    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item)? editTransactionOpened,
+    TResult Function(
+            DashboardTransaction oldItem, DashboardTransaction newItem)?
+        transactionUpdated,
+    required TResult orElse(),
+  }) {
+    if (budgetDeleted != null) {
+      return budgetDeleted(item);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
+        transactionDeleted,
+    required TResult Function(DashboardTransactionSettled value)
+        transactionSettled,
+    required TResult Function(DashboardEditTransactionOpened value)
+        editTransactionOpened,
+    required TResult Function(DashboardTransactionUpdated value)
+        transactionUpdated,
+  }) {
+    return budgetDeleted(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
+        editTransactionOpened,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
+  }) {
+    return budgetDeleted?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
+        editTransactionOpened,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
+    required TResult orElse(),
+  }) {
+    if (budgetDeleted != null) {
+      return budgetDeleted(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class DashboardBudgetDeleted implements DashboardEvent {
+  const factory DashboardBudgetDeleted(final DashboardBudget item) =
+      _$DashboardBudgetDeletedImpl;
+
+  DashboardBudget get item;
+
+  /// Create a copy of DashboardEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$DashboardBudgetDeletedImplCopyWith<_$DashboardBudgetDeletedImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -1578,8 +1834,7 @@ class __$$DashboardTransactionDeletedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardTransactionDeletedImpl
-    implements _DashboardTransactionDeleted {
+class _$DashboardTransactionDeletedImpl implements DashboardTransactionDeleted {
   const _$DashboardTransactionDeletedImpl(this.item);
 
   @override
@@ -1620,6 +1875,7 @@ class _$DashboardTransactionDeletedImpl
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -1640,6 +1896,7 @@ class _$DashboardTransactionDeletedImpl
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -1660,6 +1917,7 @@ class _$DashboardTransactionDeletedImpl
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -1677,21 +1935,21 @@ class _$DashboardTransactionDeletedImpl
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return transactionDeleted(this);
@@ -1700,18 +1958,19 @@ class _$DashboardTransactionDeletedImpl
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return transactionDeleted?.call(this);
   }
@@ -1719,18 +1978,19 @@ class _$DashboardTransactionDeletedImpl
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (transactionDeleted != null) {
@@ -1740,8 +2000,8 @@ class _$DashboardTransactionDeletedImpl
   }
 }
 
-abstract class _DashboardTransactionDeleted implements DashboardEvent {
-  const factory _DashboardTransactionDeleted(final DashboardTransaction item) =
+abstract class DashboardTransactionDeleted implements DashboardEvent {
+  const factory DashboardTransactionDeleted(final DashboardTransaction item) =
       _$DashboardTransactionDeletedImpl;
 
   DashboardTransaction get item;
@@ -1791,8 +2051,7 @@ class __$$DashboardTransactionSettledImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardTransactionSettledImpl
-    implements _DashboardTransactionSettled {
+class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
   const _$DashboardTransactionSettledImpl(this.item);
 
   @override
@@ -1833,6 +2092,7 @@ class _$DashboardTransactionSettledImpl
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -1853,6 +2113,7 @@ class _$DashboardTransactionSettledImpl
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -1873,6 +2134,7 @@ class _$DashboardTransactionSettledImpl
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -1890,21 +2152,21 @@ class _$DashboardTransactionSettledImpl
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return transactionSettled(this);
@@ -1913,18 +2175,19 @@ class _$DashboardTransactionSettledImpl
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return transactionSettled?.call(this);
   }
@@ -1932,18 +2195,19 @@ class _$DashboardTransactionSettledImpl
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (transactionSettled != null) {
@@ -1953,8 +2217,8 @@ class _$DashboardTransactionSettledImpl
   }
 }
 
-abstract class _DashboardTransactionSettled implements DashboardEvent {
-  const factory _DashboardTransactionSettled(final DashboardTransaction item) =
+abstract class DashboardTransactionSettled implements DashboardEvent {
+  const factory DashboardTransactionSettled(final DashboardTransaction item) =
       _$DashboardTransactionSettledImpl;
 
   DashboardTransaction get item;
@@ -2005,7 +2269,7 @@ class __$$DashboardEditTransactionOpenedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$DashboardEditTransactionOpenedImpl
-    implements _DashboardEditTransactionOpened {
+    implements DashboardEditTransactionOpened {
   const _$DashboardEditTransactionOpenedImpl(this.item);
 
   @override
@@ -2047,6 +2311,7 @@ class _$DashboardEditTransactionOpenedImpl
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -2067,6 +2332,7 @@ class _$DashboardEditTransactionOpenedImpl
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -2087,6 +2353,7 @@ class _$DashboardEditTransactionOpenedImpl
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -2104,21 +2371,21 @@ class _$DashboardEditTransactionOpenedImpl
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return editTransactionOpened(this);
@@ -2127,18 +2394,19 @@ class _$DashboardEditTransactionOpenedImpl
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return editTransactionOpened?.call(this);
   }
@@ -2146,18 +2414,19 @@ class _$DashboardEditTransactionOpenedImpl
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (editTransactionOpened != null) {
@@ -2167,8 +2436,8 @@ class _$DashboardEditTransactionOpenedImpl
   }
 }
 
-abstract class _DashboardEditTransactionOpened implements DashboardEvent {
-  const factory _DashboardEditTransactionOpened(
+abstract class DashboardEditTransactionOpened implements DashboardEvent {
+  const factory DashboardEditTransactionOpened(
       final DashboardTransaction item) = _$DashboardEditTransactionOpenedImpl;
 
   DashboardTransaction get item;
@@ -2224,8 +2493,7 @@ class __$$DashboardTransactionUpdatedImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DashboardTransactionUpdatedImpl
-    implements _DashboardTransactionUpdated {
+class _$DashboardTransactionUpdatedImpl implements DashboardTransactionUpdated {
   const _$DashboardTransactionUpdatedImpl(
       {required this.oldItem, required this.newItem});
 
@@ -2270,6 +2538,7 @@ class _$DashboardTransactionUpdatedImpl
     required TResult Function(int index) tabSelected,
     required TResult Function(DashboardTransaction item) transactionAdded,
     required TResult Function(DashboardBudget item) budgetAdded,
+    required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
     required TResult Function(DashboardTransaction item) transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
@@ -2290,6 +2559,7 @@ class _$DashboardTransactionUpdatedImpl
     TResult? Function(int index)? tabSelected,
     TResult? Function(DashboardTransaction item)? transactionAdded,
     TResult? Function(DashboardBudget item)? budgetAdded,
+    TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
     TResult? Function(DashboardTransaction item)? transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
@@ -2310,6 +2580,7 @@ class _$DashboardTransactionUpdatedImpl
     TResult Function(int index)? tabSelected,
     TResult Function(DashboardTransaction item)? transactionAdded,
     TResult Function(DashboardBudget item)? budgetAdded,
+    TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
     TResult Function(DashboardTransaction item)? transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
@@ -2327,21 +2598,21 @@ class _$DashboardTransactionUpdatedImpl
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_DashboardStarted value) started,
-    required TResult Function(_DashboardMainShown value) mainShown,
-    required TResult Function(_DashboardSurfaceShown value) surfaceShown,
-    required TResult Function(_DashboardAddNoteShown value) addNoteShown,
-    required TResult Function(_DashboardTabSelected value) tabSelected,
-    required TResult Function(_DashboardTransactionAdded value)
-        transactionAdded,
-    required TResult Function(_DashboardBudgetAdded value) budgetAdded,
-    required TResult Function(_DashboardTransactionDeleted value)
+    required TResult Function(DashboardStarted value) started,
+    required TResult Function(DashboardMainShown value) mainShown,
+    required TResult Function(DashboardSurfaceShown value) surfaceShown,
+    required TResult Function(DashboardAddNoteShown value) addNoteShown,
+    required TResult Function(DashboardTabSelected value) tabSelected,
+    required TResult Function(DashboardTransactionAdded value) transactionAdded,
+    required TResult Function(DashboardBudgetAdded value) budgetAdded,
+    required TResult Function(DashboardBudgetDeleted value) budgetDeleted,
+    required TResult Function(DashboardTransactionDeleted value)
         transactionDeleted,
-    required TResult Function(_DashboardTransactionSettled value)
+    required TResult Function(DashboardTransactionSettled value)
         transactionSettled,
-    required TResult Function(_DashboardEditTransactionOpened value)
+    required TResult Function(DashboardEditTransactionOpened value)
         editTransactionOpened,
-    required TResult Function(_DashboardTransactionUpdated value)
+    required TResult Function(DashboardTransactionUpdated value)
         transactionUpdated,
   }) {
     return transactionUpdated(this);
@@ -2350,18 +2621,19 @@ class _$DashboardTransactionUpdatedImpl
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_DashboardStarted value)? started,
-    TResult? Function(_DashboardMainShown value)? mainShown,
-    TResult? Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult? Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult? Function(_DashboardTabSelected value)? tabSelected,
-    TResult? Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult? Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult? Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult? Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult? Function(_DashboardEditTransactionOpened value)?
+    TResult? Function(DashboardStarted value)? started,
+    TResult? Function(DashboardMainShown value)? mainShown,
+    TResult? Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult? Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult? Function(DashboardTabSelected value)? tabSelected,
+    TResult? Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult? Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult? Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult? Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult? Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult? Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult? Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult? Function(DashboardTransactionUpdated value)? transactionUpdated,
   }) {
     return transactionUpdated?.call(this);
   }
@@ -2369,18 +2641,19 @@ class _$DashboardTransactionUpdatedImpl
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_DashboardStarted value)? started,
-    TResult Function(_DashboardMainShown value)? mainShown,
-    TResult Function(_DashboardSurfaceShown value)? surfaceShown,
-    TResult Function(_DashboardAddNoteShown value)? addNoteShown,
-    TResult Function(_DashboardTabSelected value)? tabSelected,
-    TResult Function(_DashboardTransactionAdded value)? transactionAdded,
-    TResult Function(_DashboardBudgetAdded value)? budgetAdded,
-    TResult Function(_DashboardTransactionDeleted value)? transactionDeleted,
-    TResult Function(_DashboardTransactionSettled value)? transactionSettled,
-    TResult Function(_DashboardEditTransactionOpened value)?
+    TResult Function(DashboardStarted value)? started,
+    TResult Function(DashboardMainShown value)? mainShown,
+    TResult Function(DashboardSurfaceShown value)? surfaceShown,
+    TResult Function(DashboardAddNoteShown value)? addNoteShown,
+    TResult Function(DashboardTabSelected value)? tabSelected,
+    TResult Function(DashboardTransactionAdded value)? transactionAdded,
+    TResult Function(DashboardBudgetAdded value)? budgetAdded,
+    TResult Function(DashboardBudgetDeleted value)? budgetDeleted,
+    TResult Function(DashboardTransactionDeleted value)? transactionDeleted,
+    TResult Function(DashboardTransactionSettled value)? transactionSettled,
+    TResult Function(DashboardEditTransactionOpened value)?
         editTransactionOpened,
-    TResult Function(_DashboardTransactionUpdated value)? transactionUpdated,
+    TResult Function(DashboardTransactionUpdated value)? transactionUpdated,
     required TResult orElse(),
   }) {
     if (transactionUpdated != null) {
@@ -2390,8 +2663,8 @@ class _$DashboardTransactionUpdatedImpl
   }
 }
 
-abstract class _DashboardTransactionUpdated implements DashboardEvent {
-  const factory _DashboardTransactionUpdated(
+abstract class DashboardTransactionUpdated implements DashboardEvent {
+  const factory DashboardTransactionUpdated(
           {required final DashboardTransaction oldItem,
           required final DashboardTransaction newItem}) =
       _$DashboardTransactionUpdatedImpl;
@@ -2404,292 +2677,4 @@ abstract class _DashboardTransactionUpdated implements DashboardEvent {
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$DashboardTransactionUpdatedImplCopyWith<_$DashboardTransactionUpdatedImpl>
       get copyWith => throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-mixin _$DashboardState {
-  int get currentIndex => throw _privateConstructorUsedError;
-  DashboardSurface get surface => throw _privateConstructorUsedError;
-  List<DashboardTransaction> get transactions =>
-      throw _privateConstructorUsedError;
-  List<DashboardBudget> get budgets => throw _privateConstructorUsedError;
-  DashboardTransaction? get editingTransaction =>
-      throw _privateConstructorUsedError;
-  bool get isLoading => throw _privateConstructorUsedError;
-  String? get errorMessage => throw _privateConstructorUsedError;
-
-  /// Create a copy of DashboardState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $DashboardStateCopyWith<DashboardState> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class $DashboardStateCopyWith<$Res> {
-  factory $DashboardStateCopyWith(
-          DashboardState value, $Res Function(DashboardState) then) =
-      _$DashboardStateCopyWithImpl<$Res, DashboardState>;
-  @useResult
-  $Res call(
-      {int currentIndex,
-      DashboardSurface surface,
-      List<DashboardTransaction> transactions,
-      List<DashboardBudget> budgets,
-      DashboardTransaction? editingTransaction,
-      bool isLoading,
-      String? errorMessage});
-}
-
-/// @nodoc
-class _$DashboardStateCopyWithImpl<$Res, $Val extends DashboardState>
-    implements $DashboardStateCopyWith<$Res> {
-  _$DashboardStateCopyWithImpl(this._value, this._then);
-
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
-
-  /// Create a copy of DashboardState
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? currentIndex = null,
-    Object? surface = null,
-    Object? transactions = null,
-    Object? budgets = null,
-    Object? editingTransaction = freezed,
-    Object? isLoading = null,
-    Object? errorMessage = freezed,
-  }) {
-    return _then(_value.copyWith(
-      currentIndex: null == currentIndex
-          ? _value.currentIndex
-          : currentIndex // ignore: cast_nullable_to_non_nullable
-              as int,
-      surface: null == surface
-          ? _value.surface
-          : surface // ignore: cast_nullable_to_non_nullable
-              as DashboardSurface,
-      transactions: null == transactions
-          ? _value.transactions
-          : transactions // ignore: cast_nullable_to_non_nullable
-              as List<DashboardTransaction>,
-      budgets: null == budgets
-          ? _value.budgets
-          : budgets // ignore: cast_nullable_to_non_nullable
-              as List<DashboardBudget>,
-      editingTransaction: freezed == editingTransaction
-          ? _value.editingTransaction
-          : editingTransaction // ignore: cast_nullable_to_non_nullable
-              as DashboardTransaction?,
-      isLoading: null == isLoading
-          ? _value.isLoading
-          : isLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
-      errorMessage: freezed == errorMessage
-          ? _value.errorMessage
-          : errorMessage // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
-  }
-}
-
-/// @nodoc
-abstract class _$$DashboardStateImplCopyWith<$Res>
-    implements $DashboardStateCopyWith<$Res> {
-  factory _$$DashboardStateImplCopyWith(_$DashboardStateImpl value,
-          $Res Function(_$DashboardStateImpl) then) =
-      __$$DashboardStateImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call(
-      {int currentIndex,
-      DashboardSurface surface,
-      List<DashboardTransaction> transactions,
-      List<DashboardBudget> budgets,
-      DashboardTransaction? editingTransaction,
-      bool isLoading,
-      String? errorMessage});
-}
-
-/// @nodoc
-class __$$DashboardStateImplCopyWithImpl<$Res>
-    extends _$DashboardStateCopyWithImpl<$Res, _$DashboardStateImpl>
-    implements _$$DashboardStateImplCopyWith<$Res> {
-  __$$DashboardStateImplCopyWithImpl(
-      _$DashboardStateImpl _value, $Res Function(_$DashboardStateImpl) _then)
-      : super(_value, _then);
-
-  /// Create a copy of DashboardState
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? currentIndex = null,
-    Object? surface = null,
-    Object? transactions = null,
-    Object? budgets = null,
-    Object? editingTransaction = freezed,
-    Object? isLoading = null,
-    Object? errorMessage = freezed,
-  }) {
-    return _then(_$DashboardStateImpl(
-      currentIndex: null == currentIndex
-          ? _value.currentIndex
-          : currentIndex // ignore: cast_nullable_to_non_nullable
-              as int,
-      surface: null == surface
-          ? _value.surface
-          : surface // ignore: cast_nullable_to_non_nullable
-              as DashboardSurface,
-      transactions: null == transactions
-          ? _value._transactions
-          : transactions // ignore: cast_nullable_to_non_nullable
-              as List<DashboardTransaction>,
-      budgets: null == budgets
-          ? _value._budgets
-          : budgets // ignore: cast_nullable_to_non_nullable
-              as List<DashboardBudget>,
-      editingTransaction: freezed == editingTransaction
-          ? _value.editingTransaction
-          : editingTransaction // ignore: cast_nullable_to_non_nullable
-              as DashboardTransaction?,
-      isLoading: null == isLoading
-          ? _value.isLoading
-          : isLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
-      errorMessage: freezed == errorMessage
-          ? _value.errorMessage
-          : errorMessage // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
-  }
-}
-
-/// @nodoc
-
-class _$DashboardStateImpl implements _DashboardState {
-  const _$DashboardStateImpl(
-      {this.currentIndex = 0,
-      this.surface = DashboardSurface.main,
-      final List<DashboardTransaction> transactions =
-          const <DashboardTransaction>[],
-      final List<DashboardBudget> budgets = const <DashboardBudget>[],
-      this.editingTransaction,
-      this.isLoading = false,
-      this.errorMessage})
-      : _transactions = transactions,
-        _budgets = budgets;
-
-  @override
-  @JsonKey()
-  final int currentIndex;
-  @override
-  @JsonKey()
-  final DashboardSurface surface;
-  final List<DashboardTransaction> _transactions;
-  @override
-  @JsonKey()
-  List<DashboardTransaction> get transactions {
-    if (_transactions is EqualUnmodifiableListView) return _transactions;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_transactions);
-  }
-
-  final List<DashboardBudget> _budgets;
-  @override
-  @JsonKey()
-  List<DashboardBudget> get budgets {
-    if (_budgets is EqualUnmodifiableListView) return _budgets;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_budgets);
-  }
-
-  @override
-  final DashboardTransaction? editingTransaction;
-  @override
-  @JsonKey()
-  final bool isLoading;
-  @override
-  final String? errorMessage;
-
-  @override
-  String toString() {
-    return 'DashboardState(currentIndex: $currentIndex, surface: $surface, transactions: $transactions, budgets: $budgets, editingTransaction: $editingTransaction, isLoading: $isLoading, errorMessage: $errorMessage)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$DashboardStateImpl &&
-            (identical(other.currentIndex, currentIndex) ||
-                other.currentIndex == currentIndex) &&
-            (identical(other.surface, surface) || other.surface == surface) &&
-            const DeepCollectionEquality()
-                .equals(other._transactions, _transactions) &&
-            const DeepCollectionEquality().equals(other._budgets, _budgets) &&
-            (identical(other.editingTransaction, editingTransaction) ||
-                other.editingTransaction == editingTransaction) &&
-            (identical(other.isLoading, isLoading) ||
-                other.isLoading == isLoading) &&
-            (identical(other.errorMessage, errorMessage) ||
-                other.errorMessage == errorMessage));
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      currentIndex,
-      surface,
-      const DeepCollectionEquality().hash(_transactions),
-      const DeepCollectionEquality().hash(_budgets),
-      editingTransaction,
-      isLoading,
-      errorMessage);
-
-  /// Create a copy of DashboardState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$DashboardStateImplCopyWith<_$DashboardStateImpl> get copyWith =>
-      __$$DashboardStateImplCopyWithImpl<_$DashboardStateImpl>(
-          this, _$identity);
-}
-
-abstract class _DashboardState implements DashboardState {
-  const factory _DashboardState(
-      {final int currentIndex,
-      final DashboardSurface surface,
-      final List<DashboardTransaction> transactions,
-      final List<DashboardBudget> budgets,
-      final DashboardTransaction? editingTransaction,
-      final bool isLoading,
-      final String? errorMessage}) = _$DashboardStateImpl;
-
-  @override
-  int get currentIndex;
-  @override
-  DashboardSurface get surface;
-  @override
-  List<DashboardTransaction> get transactions;
-  @override
-  List<DashboardBudget> get budgets;
-  @override
-  DashboardTransaction? get editingTransaction;
-  @override
-  bool get isLoading;
-  @override
-  String? get errorMessage;
-
-  /// Create a copy of DashboardState
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DashboardStateImplCopyWith<_$DashboardStateImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }

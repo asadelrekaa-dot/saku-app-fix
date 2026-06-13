@@ -1,5 +1,5 @@
 import 'dashboard_shared.dart';
-import 'category_picker_component.dart'; // Tambahkan ini di bagian atas file kamu
+import 'add_note_page.dart';
 
 class HistoryDashboard extends StatefulWidget {
   const HistoryDashboard({
@@ -22,6 +22,109 @@ class HistoryDashboard extends StatefulWidget {
 class HistoryDashboardState extends State<HistoryDashboard> {
   String _query = '';
   String _category = 'Semua';
+  late int _selectedMonth;
+  late int _selectedYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _initMonthFromLatest();
+  }
+
+  @override
+  void didUpdateWidget(HistoryDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.transactions != oldWidget.transactions) {
+      _initMonthFromLatest();
+    }
+  }
+
+  void _initMonthFromLatest() {
+    final latest = widget.transactions.isNotEmpty ? widget.transactions.first : null;
+    if (latest != null) {
+      final parsed = _parseDate(latest.rawDate, latest.date);
+      if (parsed != null) {
+        _selectedMonth = parsed.month;
+        _selectedYear = parsed.year;
+        return;
+      }
+    }
+    final now = DateTime.now();
+    _selectedMonth = now.month;
+    _selectedYear = now.year;
+  }
+
+  DateTime? _parseDate(String? rawDate, String dateStr) {
+    if (rawDate != null) {
+      final parsed = DateTime.tryParse(rawDate);
+      if (parsed != null) return parsed;
+    }
+    if (dateStr.isNotEmpty && dateStr != '—') {
+      const months = {
+        'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4,
+        'Mei': 5, 'Juni': 6, 'Juli': 7, 'Agustus': 8,
+        'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12,
+      };
+      final parts = dateStr.split(' ');
+      if (parts.length >= 3) {
+        final day = int.tryParse(parts[0]);
+        final month = months[parts[1]];
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          return DateTime(year, month, day);
+        }
+      }
+    }
+    return null;
+  }
+
+  bool _matchesMonth(DashboardTransaction item) {
+    final parsed = _parseDate(item.rawDate, item.date);
+    if (parsed == null) return false;
+    return parsed.month == _selectedMonth && parsed.year == _selectedYear;
+  }
+
+  void _goToPrevMonth() {
+    setState(() {
+      if (_selectedMonth == 1) {
+        _selectedMonth = 12;
+        _selectedYear -= 1;
+      } else {
+        _selectedMonth -= 1;
+      }
+    });
+  }
+
+  void _goToNextMonth() {
+    final now = DateTime.now();
+    final nextMonth = _selectedMonth == 12 ? 1 : _selectedMonth + 1;
+    final nextYear = _selectedMonth == 12 ? _selectedYear + 1 : _selectedYear;
+    if (nextYear > now.year || (nextYear == now.year && nextMonth > now.month)) return;
+    setState(() {
+      _selectedMonth = nextMonth;
+      _selectedYear = nextYear;
+    });
+  }
+
+  bool get _canGoBack {
+    final prevYear = _selectedMonth == 1 ? _selectedYear - 1 : _selectedYear;
+    return prevYear >= 2020;
+  }
+
+  bool get _canGoForward {
+    final now = DateTime.now();
+    return _selectedYear < now.year || (_selectedYear == now.year && _selectedMonth < now.month);
+  }
+
+
+
+  String _monthNameFor(int month) {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return months[month - 1];
+  }
 
   List<DashboardTransaction> get _visibleTransactions {
     return widget.transactions.where((item) {
@@ -29,7 +132,8 @@ class HistoryDashboardState extends State<HistoryDashboard> {
           item.title.toLowerCase().contains(_query.toLowerCase()) ||
           item.note.toLowerCase().contains(_query.toLowerCase());
       final matchesCategory = _category == 'Semua' || item.title == _category;
-      return matchesQuery && matchesCategory;
+      final matchesMonth = _matchesMonth(item);
+      return matchesQuery && matchesCategory && matchesMonth;
     }).toList();
   }
 
@@ -71,7 +175,12 @@ class HistoryDashboardState extends State<HistoryDashboard> {
           ),
         ),
         const SizedBox(height: 18),
-        const _MonthHeader(),
+        _MonthHeader(
+          month: _monthNameFor(_selectedMonth),
+          year: _selectedYear.toString(),
+          onBack: _canGoBack ? _goToPrevMonth : null,
+          onForward: _canGoForward ? _goToNextMonth : null,
+        ),
         const SizedBox(height: 14),
         if (visibleTransactions.isEmpty)
           const EmptyStateCard(
@@ -130,17 +239,23 @@ class _FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<_FilterDialog> {
   late String _category = widget.selectedCategory;
 
-Future<void> _pickCategory() async {
-    final selected = await CategoryPickerComponent.showAsBottomSheet(
+  void _pickCategory() {
+    showModalBottomSheet<void>(
       context: context,
-      selectedCategory: _category,
-      kind: CategoryKind.expense,
-      // 💡 Hapus baris includeAll: true disini
+      backgroundColor: SakuColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => CategoryPickerSheet(
+        selectedCategory: _category,
+        kind: CategoryKind.expense,
+        includeAll: true,
+        onSelected: (category) {
+          setState(() => _category = category);
+          Navigator.of(context).pop();
+        },
+      ),
     );
-
-    if (selected != null && mounted) {
-      setState(() => _category = selected);
-    }
   }
 
   @override
@@ -397,7 +512,7 @@ class _StandardTransactionDetailDialog extends StatelessWidget {
                     ),
                     const SizedBox(width: 14),
                     const _TransactionDetailColumn(
-                      label: 'Cash',
+                      label: 'Dompet',
                       alignment: CrossAxisAlignment.center,
                       child: _LoanWalletIcon(),
                     ),
@@ -564,7 +679,7 @@ class _DebtPaymentDialog extends StatelessWidget {
               'Bayar hutang dari dompet mana?',
               style: TextStyle(
                 color: SakuColors.black,
-                fontSize: 16,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -574,7 +689,7 @@ class _DebtPaymentDialog extends StatelessWidget {
                 Expanded(
                   child: DialogSelectField(
                     label: 'Dompet',
-                    value: 'BSI',
+                    value: 'Dompet',
                     icon: Icons.credit_card_rounded,
                     trailing: Icons.keyboard_arrow_down_rounded,
                   ),
@@ -583,7 +698,7 @@ class _DebtPaymentDialog extends StatelessWidget {
                 Expanded(
                   child: DialogSelectField(
                     label: 'Tanggal Lunas',
-                    value: '12 Juni 2026',
+                    value: '—',
                     icon: null,
                     trailing: Icons.calendar_month_rounded,
                     muted: true,
@@ -809,7 +924,7 @@ class _LoanDetailDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'Cash',
+                          'Dompet',
                           style: TextStyle(
                             color: SakuColors.black,
                             fontSize: 17,
@@ -1118,7 +1233,17 @@ class TransactionTile extends StatelessWidget {
 }
 
 class _MonthHeader extends StatelessWidget {
-  const _MonthHeader();
+  const _MonthHeader({
+    required this.month,
+    required this.year,
+    this.onBack,
+    this.onForward,
+  });
+
+  final String month;
+  final String year;
+  final VoidCallback? onBack;
+  final VoidCallback? onForward;
 
   @override
   Widget build(BuildContext context) {
@@ -1128,23 +1253,26 @@ class _MonthHeader extends StatelessWidget {
         color: SakuColors.blue100,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.chevron_left_rounded, color: SakuColors.blue900),
+          IconButton(
+            icon: const Icon(Icons.chevron_left_rounded, color: SakuColors.blue900),
+            onPressed: onBack,
+          ),
           Expanded(
             child: Column(
               children: [
                 Text(
-                  'April',
-                  style: TextStyle(
+                  month,
+                  style: const TextStyle(
                     color: SakuColors.black,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 Text(
-                  '2026',
-                  style: TextStyle(
+                  year,
+                  style: const TextStyle(
                     color: SakuColors.neutral700,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1152,7 +1280,10 @@ class _MonthHeader extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: SakuColors.blue900),
+          IconButton(
+            icon: const Icon(Icons.chevron_right_rounded, color: SakuColors.blue900),
+            onPressed: onForward,
+          ),
         ],
       ),
     );

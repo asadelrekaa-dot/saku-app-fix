@@ -1,24 +1,30 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/dashboard_models.dart' show WalletItem;
 
 class LaravelUser {
   const LaravelUser({
     required this.name,
     required this.email,
+    this.photoUrl,
   });
 
   factory LaravelUser.fromJson(Map<String, dynamic> json) {
     return LaravelUser(
       name: (json['name'] ?? 'Pengguna').toString(),
       email: (json['email'] ?? '').toString(),
+      photoUrl: (json['photo_url'] as String?),
     );
   }
 
   final String name;
   final String email;
+  final String? photoUrl;
 }
 
 class LaravelAuthResult {
@@ -46,11 +52,13 @@ class LaravelTransactionDraft {
     required this.title,
     required this.note,
     required this.amountValue,
+    this.rawDate,
   });
 
   final String title;
   final String note;
   final int amountValue;
+  final String? rawDate;
 }
 
 class LaravelApiException implements Exception {
@@ -67,9 +75,13 @@ class LaravelApiService {
 
   static final LaravelApiService instance = LaravelApiService._();
 
+  // ── Ganti IP ini sesuai jaringan kamu saat testing di HP ──
+  static const _overrideUrl = "https://decrease-boasting-fanciness.ngrok-free.dev/api";
+  // ── Atau override via: flutter run --dart-define=SAKU_API_BASE_URL=... ──
+
   static const _baseUrl = String.fromEnvironment(
     'SAKU_API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8000/api',
+    defaultValue: _overrideUrl,
   );
   static const _tokenKey = 'saku_laravel_token';
   static const _walletIdKey = 'saku_laravel_wallet_id';
@@ -125,6 +137,116 @@ class LaravelApiService {
     await prefs.remove(_userEmailKey);
   }
 
+  Future<LaravelUser> getProfile() async {
+    final data = await _get('/user');
+    return LaravelUser.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> saveUserLocally({
+    required String name,
+    required String email,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userNameKey, name);
+    await prefs.setString(_userEmailKey, email);
+  }
+
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+  }) async {
+    await _put('/user', body: {'name': name, 'email': email});
+    await saveUserLocally(name: name, email: email);
+  }
+
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _put('/user/password', body: {
+      'current_password': currentPassword,
+      'password': newPassword,
+      'password_confirmation': newPassword,
+    });
+  }
+
+  Future<String> uploadPhoto(File image) async {
+    final data = await _uploadMultipart('/user/photo', image);
+    return (data['data'] as Map<String, dynamic>?)?['photo_url']?.toString() ?? '';
+  }
+
+  Future<List<WalletItem>> getWallets() async {
+    final data = await _get('/wallets');
+    final list = data['data'];
+    if (list is! List) return [];
+    return list.map((e) {
+      final map = e as Map<String, dynamic>;
+      return WalletItem(
+        id: map['id'] as int?,
+        name: (map['nama_wallet'] ?? 'Dompet').toString(),
+        balance: int.tryParse((map['nominal'] ?? '0').toString()) ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<WalletItem> createWallet({
+    required String name,
+    required int balance,
+    bool isPrimary = false,
+  }) async {
+    final data = await _post('/wallet', body: {
+      'nama_wallet': name,
+      'nominal': balance,
+      if (isPrimary) 'is_primary': true,
+    });
+    final item = data['data'] as Map<String, dynamic>;
+    return WalletItem(
+      id: item['id'] as int?,
+      name: (item['nama_wallet'] ?? name).toString(),
+      balance: int.tryParse((item['nominal'] ?? balance).toString()) ?? balance,
+    );
+  }
+
+  Future<void> deleteWallet({required int id}) async {
+    await _delete('/wallets/$id');
+  }
+
+  Future<List<Map<String, dynamic>>> getBudgets() async {
+    final data = await _get('/budgets');
+    final list = data['data'];
+    if (list is! List) return [];
+    return list.cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> createBudget({
+    required int kategoriId,
+    required int nominal,
+  }) async {
+    final data = await _post('/budgets', body: {
+      'kategori_id': kategoriId,
+      'nominal': nominal,
+    });
+    return (data['data'] as Map<String, dynamic>?) ?? {};
+  }
+
+  Future<void> deleteBudget({required int apiId}) async {
+    await _delete('/budgets/$apiId');
+  }
+
+  Future<List<Map<String, dynamic>>> getTransactions() async {
+    final data = await _get('/transactions');
+    final list = data['data'];
+    if (list is! List) return [];
+    return list.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getNotifications() async {
+    final data = await _get('/notifications');
+    final list = data['data'];
+    if (list is! List) return [];
+    return list.cast<Map<String, dynamic>>();
+  }
+
   Future<int> ensureDefaultWallet() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedWalletId = prefs.getInt(_walletIdKey);
@@ -133,8 +255,8 @@ class LaravelApiService {
     final data = await _post(
       '/wallet',
       body: {
-        'nama_wallet': 'BSI',
-        'nominal': 12000000,
+        'nama_wallet': 'Dompet Utama',
+        'nominal': 0,
       },
     );
     final walletId = _readId(data['data']) ?? 1;
@@ -150,7 +272,7 @@ class LaravelApiService {
     final amount = item.amountValue.abs();
     final body = <String, Object?>{
       'wallet_id': walletId,
-      'waktu': DateTime.now().toIso8601String(),
+      'waktu': item.rawDate ?? DateTime.now().toIso8601String(),
       'notes': item.note,
       'nominal': amount,
     };
@@ -188,7 +310,7 @@ class LaravelApiService {
     final amount = item.amountValue.abs();
     final body = <String, Object?>{
       'wallet_id': walletId,
-      'waktu': DateTime.now().toIso8601String(),
+      'waktu': item.rawDate ?? DateTime.now().toIso8601String(),
       'notes': item.note,
       'nominal': amount,
     };
@@ -246,9 +368,63 @@ class LaravelApiService {
     );
   }
 
+  Future<void> cacheWalletId(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_walletIdKey, id);
+  }
+
   Future<int> _walletId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_walletIdKey) ?? 1;
+  }
+
+  Future<int> getWalletId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_walletIdKey) ?? 1;
+  }
+
+  Future<Map<String, dynamic>> _uploadMultipart(
+    String path,
+    File file,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final request = http.MultipartRequest('POST', _uri(path));
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.headers['Accept'] = 'application/json';
+    request.files.add(await http.MultipartFile.fromPath('photo', file.path));
+    final streamed = await request.send().timeout(const Duration(seconds: 60));
+    final response = await http.Response.fromStream(streamed);
+    final decoded = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LaravelApiException(
+        _messageFrom(decoded) ?? 'API error ${response.statusCode}',
+      );
+    }
+    return decoded;
+  }
+
+  Future<Map<String, dynamic>> _get(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    final headers = <String, String>{
+      'Accept': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final response = await http
+        .get(_uri(path), headers: headers)
+        .timeout(const Duration(seconds: 30));
+    final decoded = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LaravelApiException(
+        _messageFrom(decoded) ?? 'API error ${response.statusCode}',
+      );
+    }
+    return decoded;
   }
 
   Future<void> _delete(String path) async {

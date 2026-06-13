@@ -1,13 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dashboard_shared.dart'; // Jika satu folder, ini sudah benar
-import 'category_picker_component.dart'; // Jika satu folder, ini sudah benar
+import '../../../core/api/laravel_api_service.dart';
 
-// SESUAIKAN PATH INI: naik 2 tingkat lalu masuk ke folder bloc/add_note
-import '../bloc/add_note/add_note_bloc.dart';// Import file BLoC kamu
+import 'dashboard_shared.dart';
 
-class AddNoteDashboard extends StatelessWidget {
-  AddNoteDashboard({
+class AddNoteDashboard extends StatefulWidget {
+  const AddNoteDashboard({
     super.key,
     required this.mode,
     required this.onBack,
@@ -20,196 +16,616 @@ class AddNoteDashboard extends StatelessWidget {
   final ValueChanged<AddNoteMode> onSwitchMode;
   final ValueChanged<DashboardTransaction> onSave;
 
-  // Controller text tetap dideklarasikan di sini karena berinteraksi langsung dengan TextField UI
+  @override
+  State<AddNoteDashboard> createState() => AddNoteDashboardState();
+}
+
+class AddNoteDashboardState extends State<AddNoteDashboard> {
   final _nameController = TextEditingController(text: 'Nama');
   final _noteController = TextEditingController();
+  String _amount = '0';
+  String _expenseCategory = 'Makanan';
+  String _incomeCategory = 'Gaji';
+  int? _selectedWalletId;
+  String _selectedWalletName = 'Dompet';
+  List<WalletItem> _wallets = [];
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+  late DateTime _deadlineDate;
+
+  bool get _isLoan => widget.mode == AddNoteMode.loan;
+  bool get _isIncome => widget.mode == AddNoteMode.income;
+  bool get _isExpense => widget.mode == AddNoteMode.expense;
+  bool get _isDailyNote => _isExpense || _isIncome;
+  String get _selectedCategory =>
+      _isIncome ? _incomeCategory : _expenseCategory;
+
+  String get _todayDate {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return '${_selectedDate.day} ${months[_selectedDate.month - 1]} ${_selectedDate.year}';
+  }
+
+  String get _currentTime {
+    return '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  String get _deadlineDateStr {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return '${_deadlineDate.day} ${months[_deadlineDate.month - 1]} ${_deadlineDate.year}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDate = now;
+    _selectedTime = TimeOfDay.fromDateTime(now);
+    _deadlineDate = now.add(const Duration(days: 30));
+    _fetchWallets();
+  }
+
+  Future<void> _fetchWallets() async {
+    final wallets = await LaravelApiService.instance.getWallets();
+    if (!mounted) return;
+    setState(() {
+      _wallets = wallets;
+      if (wallets.isNotEmpty) {
+        _selectedWalletId = wallets.first.id;
+        _selectedWalletName = wallets.first.name;
+      }
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pilih Tanggal',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null && mounted) {
+      setState(() => _selectedDate = picked);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      helpText: 'Pilih Waktu',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null && mounted) {
+      setState(() => _selectedTime = picked);
+    }
+  }
+
+  Future<void> _pickDeadlineDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _deadlineDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pilih Jatuh Tempo',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null && mounted) {
+      setState(() => _deadlineDate = picked);
+    }
+  }
+
+  Future<void> _openWalletPicker() async {
+    await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => WalletPickerSheet(
+        wallets: _wallets,
+        selectedId: _selectedWalletId,
+        onSelected: (id, name) {
+          Navigator.of(context).pop();
+          setState(() {
+            _selectedWalletId = id;
+            _selectedWalletName = name;
+          });
+          LaravelApiService.instance.cacheWalletId(id);
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _handleKeypadTap(String key) {
+    if (key == 'Simpan') {
+      _saveNote();
+      return;
+    }
+    setState(() {
+      if (key == 'C') {
+        _amount = '0';
+      } else if (key == 'back') {
+        _amount = _amount.length <= 1
+            ? '0'
+            : _amount.substring(0, _amount.length - 1);
+      } else if (RegExp(r'^\d+$').hasMatch(key)) {
+        _amount = _amount == '0' ? key : '$_amount$key';
+      }
+    });
+  }
+
+  void _saveNote() {
+    final numericAmount = int.tryParse(_amount) ?? 0;
+    if (numericAmount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nominal belum diisi')),
+      );
+      return;
+    }
+
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    final dateStr = '${_selectedDate.day} ${months[_selectedDate.month - 1]} ${_selectedDate.year}';
+    final timeStr = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+
+    final rawDate = DateTime(
+      _selectedDate.year, _selectedDate.month, _selectedDate.day,
+      _selectedTime.hour, _selectedTime.minute,
+    ).toIso8601String();
+
+    final name = _nameController.text.trim();
+    final note = _noteController.text.trim();
+    final title = _isDailyNote
+        ? _selectedCategory
+        : _isLoan
+            ? 'Beri Pinjaman'
+            : 'Hutang';
+    final isMoneyOut = _isExpense || _isLoan;
+    widget.onSave(
+      DashboardTransaction(
+        title: title,
+        note: note.isNotEmpty
+            ? note
+            : _isDailyNote
+                ? 'Catatan $title'
+                : '${_isLoan ? 'Pinjaman ke' : 'Hutang ke'} ${name.isEmpty ? 'Nama' : name}',
+        amountValue: isMoneyOut ? -numericAmount : numericAmount,
+        date: dateStr,
+        time: timeStr,
+        rawDate: rawDate,
+        icon: categoryIcon(title),
+        color: isMoneyOut ? SakuColors.danger : SakuColors.success,
+      ),
+    );
+  }
+
+  Future<void> _openCategoryPicker() async {
+    final category = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => CategorySelectionPage(
+          selectedCategory: _selectedCategory,
+          kind: _isIncome ? CategoryKind.income : CategoryKind.expense,
+        ),
+      ),
+    );
+    if (category == null) return;
+    setState(() {
+      if (_isIncome) {
+        _incomeCategory = category;
+      } else {
+        _expenseCategory = category;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Membuka bloc dan mengirim event started untuk inisialisasi mode awal
-    return BlocProvider(
-      create: (context) => AddNoteBloc()..add(AddNoteEvent.started(mode)),
-      child: BlocListener<AddNoteBloc, AddNoteState>(
-        listenWhen: (previous, current) => previous.status != current.status,
-        listener: (context, state) {
-          if (state.status == AddNoteStatus.failure && state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage!)),
-            );
-          } else if (state.status == AddNoteStatus.success) {
-            // Membuka kembali data kalkulasi final dari bloc untuk dikirim ke fungsi onSave di page utama
-            final numericAmount = int.tryParse(state.amount) ?? 0;
-            final title = state.isDailyNote
-                ? state.selectedCategory
-                : state.isLoan
-                    ? 'Beri Pinjaman'
-                    : 'Hutang';
-            final isMoneyOut = state.isExpense || state.isLoan;
-            final name = _nameController.text.trim();
-            final note = _noteController.text.trim();
-
-              final now = DateTime.now();
-              onSave(
-                DashboardTransaction(
-                  title: title,
-                  note: note.isNotEmpty
-                      ? note
-                      : state.isDailyNote
-                          ? 'Catatan $title'
-                          : '${state.isLoan ? 'Pinjaman ke' : 'Hutang ke'} ${name.isEmpty ? 'Nama' : name}',
-                  amountValue: isMoneyOut ? -numericAmount : numericAmount,
-                  date: formatDate(now),
-                  time: 'Baru saja',
-                  icon: categoryIcon(title),
-                  color: isMoneyOut ? SakuColors.danger : SakuColors.success,
+    return Column(
+      children: [
+        ChildPageTopBar(title: 'Tambah Catatan', onBack: widget.onBack),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(32, 18, 32, 14),
+            children: [
+              _AddNoteTypeSelector(
+                mode: widget.mode,
+                onSwitchMode: widget.onSwitchMode,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TappablePillField(
+                      text: _todayDate,
+                      icon: Icons.calendar_month_rounded,
+                      onTap: _pickDate,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: _TappablePillField(
+                      text: _currentTime,
+                      icon: Icons.access_time_filled_rounded,
+                      onTap: _pickTime,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (_isDailyNote) ...[
+                SelectablePillField(
+                  label: 'Kategori',
+                  text: _selectedCategory,
+                  icon: categoryIcon(_selectedCategory),
+                  onTap: _openCategoryPicker,
                 ),
-              );
-          }
-        },
-        child: BlocBuilder<AddNoteBloc, AddNoteState>(
-          builder: (context, state) {
-            return Column(
-              children: [
-                ChildPageTopBar(title: 'Tambah Catatan', onBack: onBack),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(32, 18, 32, 14),
-                    children: [
-                      _AddNoteTypeSelector(
-                        mode: state.mode,
-                        onSwitchMode: (newMode) {
-                          context.read<AddNoteBloc>().add(AddNoteEvent.modeChanged(newMode));
-                        },
-                      ),
-                      SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PillField(
-                              text: formatDate(DateTime.now()),
-                              icon: Icons.calendar_month_rounded,
-                            ),
-                          ),
-                          SizedBox(width: 20),
-                          Expanded(
-                            child: _PillField(
-                              text: formatTime(DateTime.now()),
-                              icon: Icons.access_time_filled_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      if (state.isDailyNote) ...[
-                        SelectablePillField(
-                          label: 'Kategori',
-                          text: state.selectedCategory,
-                          icon: categoryIcon(state.selectedCategory),
-                          onTap: () async {
-                            // Memanggil Bottom Sheet dari file terpisah yang sudah dibuat sebelumnya
-                            final category = await CategoryPickerComponent.showAsBottomSheet(
-                              context: context,
-                              selectedCategory: state.selectedCategory,
-                              kind: state.isIncome ? CategoryKind.income : CategoryKind.expense,
-                            );
-                            if (category != null && context.mounted) {
-                              context.read<AddNoteBloc>().add(AddNoteEvent.categoryChanged(category));
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Dompet',
-                          style: TextStyle(
-                            color: SakuColors.black,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const SizedBox(
-                          width: 164,
-                          child: WalletPicker(),
-                        ),
-                      ] else ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: EditablePillField(
-                                label: 'Nama',
-                                controller: _nameController,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _LabeledPillField(
-                                label: 'Jatuh Tempo',
-                                text: formatDate(DateTime.now().add(const Duration(days: 30))),
-                                icon: Icons.calendar_month_rounded,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 14),
-                      EditablePillField(
-                        label: 'Catatan',
-                        controller: _noteController,
-                        hintText: 'Tulis catatan atau keterangan disini',
-                      ),
-                      if (state.isLoan) ...[
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Dompet',
-                          style: TextStyle(
-                            color: SakuColors.black,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const SizedBox(
-                          width: 164,
-                          child: WalletPicker(),
-                        ),
-                      ],
-                    ],
+                const SizedBox(height: 14),
+                const Text(
+                  'Dompet',
+                  style: TextStyle(
+                    color: SakuColors.black,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                Container(
-                  color: SakuColors.blue50,
-                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
-                  child: Column(
-                    children: [
-                      _AmountDisplay(amount: state.amount),
-                      const SizedBox(height: 6),
-                      _CalculatorPad(
-                        onTap: (key) {
-                          if (key == 'Simpan') {
-                            context.read<AddNoteBloc>().add(
-                                  AddNoteEvent.saveSubmitted(
-                                    name: _nameController.text,
-                                    note: _noteController.text,
-                                  ),
-                                );
-                          } else {
-                            context.read<AddNoteBloc>().add(AddNoteEvent.keypadTapped(key));
-                          }
-                        },
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: 164,
+                  child: WalletPicker(
+                    walletName: _selectedWalletName,
+                    onTap: _openWalletPicker,
+                  ),
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: EditablePillField(
+                        label: 'Nama',
+                        controller: _nameController,
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: _LabeledTappablePillField(
+                        label: 'Jatuh Tempo',
+                        text: _deadlineDateStr,
+                        icon: Icons.calendar_month_rounded,
+                        onTap: _pickDeadlineDate,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 14),
+              EditablePillField(
+                label: 'Catatan',
+                controller: _noteController,
+                hintText: 'Tulis catatan atau keterangan disini',
+              ),
+              if (_isLoan) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'Dompet',
+                  style: TextStyle(
+                    color: SakuColors.black,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: 164,
+                  child: WalletPicker(
+                    walletName: _selectedWalletName,
+                    onTap: _openWalletPicker,
                   ),
                 ),
               ],
-            );
-          },
+            ],
+          ),
+        ),
+        Container(
+          color: SakuColors.blue50,
+          padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
+          child: Column(
+            children: [
+              _AmountDisplay(amount: _amount),
+              const SizedBox(height: 6),
+              _CalculatorPad(onTap: _handleKeypadTap),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class CategoryPickerSheet extends StatelessWidget {
+  const CategoryPickerSheet({
+    super.key,
+    required this.selectedCategory,
+    required this.onSelected,
+    this.kind = CategoryKind.expense,
+    this.includeAll = false,
+  });
+
+  final String selectedCategory;
+  final ValueChanged<String> onSelected;
+  final CategoryKind kind;
+  final bool includeAll;
+
+  static const _expenseCategories = [
+    'Makanan',
+    'Transportasi',
+    'Rumah',
+    'Kesehatan',
+    'Belanja',
+    'Kecantikan',
+    'Hiburan',
+    'Pendidikan',
+    'Olahraga',
+    'Darurat',
+    'Sedekah',
+    'Lainnya',
+  ];
+
+  static const _incomeCategories = [
+    'Gaji',
+    'Freelance',
+    'Bisnis',
+    'Hadiah',
+    'Penjualan',
+    'Investasi',
+    'Sewa',
+    'Uang Saku',
+    'Lainnya',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final baseItems = _categoriesForKind(kind);
+    final items = includeAll ? ['Semua', ...baseItems] : baseItems;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pilih Kategori',
+              style: TextStyle(
+                color: SakuColors.black,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Flexible(
+              child: GridView.builder(
+                shrinkWrap: true,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.95,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final category = items[index];
+                  final selected = category == selectedCategory;
+                  return _CategoryChoiceTile(
+                    title: category,
+                    icon: categoryIcon(category),
+                    selected: selected,
+                    onTap: () => onSelected(category),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// =========================================================================
-// WIDGET-WIDGET PENDUKUNG DI BAWAH INI TETAP SAMA KARENA UTK LAYOUTING SAJA
-// =========================================================================
+enum CategoryKind { expense, income }
+
+List<String> _categoriesForKind(CategoryKind kind) {
+  return kind == CategoryKind.income
+      ? CategoryPickerSheet._incomeCategories
+      : CategoryPickerSheet._expenseCategories;
+}
+
+class CategorySelectionPage extends StatelessWidget {
+  const CategorySelectionPage({
+    super.key,
+    required this.selectedCategory,
+    required this.kind,
+  });
+
+  final String selectedCategory;
+  final CategoryKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = _categoriesForKind(kind);
+    final title = kind == CategoryKind.income
+        ? 'Kategori Pemasukan'
+        : 'Kategori Pengeluaran';
+
+    return Scaffold(
+      backgroundColor: SakuColors.neutral50,
+      body: SafeArea(
+        child: Center(
+          child: SizedBox(
+            width: 430,
+            child: Column(
+              children: [
+                ChildPageTopBar(
+                  title: title,
+                  onBack: () => Navigator.of(context).pop(),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(32, 20, 32, 32),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 20,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return _CategoryPageTile(
+                        title: category,
+                        selected: category == selectedCategory,
+                        onTap: () => Navigator.of(context).pop(category),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryPageTile extends StatelessWidget {
+  const _CategoryPageTile({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = categoryAsset(title);
+    return Material(
+      color: SakuColors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: selected ? 4 : 2,
+      shadowColor: SakuColors.black.withValues(alpha: 0.26),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? SakuColors.blue300 : SakuColors.neutral300,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (asset != null)
+                Image.asset(asset, width: 38, height: 38, fit: BoxFit.contain)
+              else
+                Icon(categoryIcon(title), color: SakuColors.mango500, size: 36),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: SakuColors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChoiceTile extends StatelessWidget {
+  const _CategoryChoiceTile({
+    required this.title,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? SakuColors.blue100 : SakuColors.neutral100,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor:
+                    selected ? SakuColors.blue300 : SakuColors.white,
+                child: Icon(
+                  icon,
+                  color: selected ? SakuColors.white : SakuColors.mango500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: SakuColors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _AddNoteTypeSelector extends StatelessWidget {
   const _AddNoteTypeSelector({
@@ -395,6 +811,87 @@ class _LabeledPillField extends StatelessWidget {
   }
 }
 
+class _TappablePillField extends StatelessWidget {
+  const _TappablePillField({
+    required this.text,
+    this.icon,
+    required this.onTap,
+  });
+
+  final String text;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: SakuColors.white,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: SakuColors.neutral300),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SakuColors.neutral700,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (icon != null) Icon(icon, color: SakuColors.neutral300),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LabeledTappablePillField extends StatelessWidget {
+  const _LabeledTappablePillField({
+    required this.label,
+    required this.text,
+    this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final String text;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: SakuColors.black,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 6),
+        _TappablePillField(text: text, icon: icon, onTap: onTap),
+      ],
+    );
+  }
+}
+
 class SelectablePillField extends StatelessWidget {
   const SelectablePillField({
     super.key,
@@ -516,33 +1013,175 @@ class EditablePillField extends StatelessWidget {
 }
 
 class WalletPicker extends StatelessWidget {
-  const WalletPicker({super.key});
+  const WalletPicker({
+    super.key,
+    required this.walletName,
+    required this.onTap,
+  });
+
+  final String walletName;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: SakuColors.white,
+    return Material(
+      color: SakuColors.white,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: SakuColors.neutral300),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: SakuColors.neutral300),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.credit_card_rounded, color: SakuColors.mango500),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  walletName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SakuColors.neutral700,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: SakuColors.black),
+            ],
+          ),
+        ),
       ),
-      child: const Row(
-        children: [
-          Icon(Icons.credit_card_rounded, color: SakuColors.mango500),
-          SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              'BSI',
+    );
+  }
+}
+
+class WalletPickerSheet extends StatelessWidget {
+  const WalletPickerSheet({super.key,
+    required this.wallets,
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  final List<WalletItem> wallets;
+  final int? selectedId;
+  final void Function(int id, String name) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pilih Dompet',
               style: TextStyle(
-                color: SakuColors.neutral700,
-                fontWeight: FontWeight.w800,
+                color: SakuColors.black,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
               ),
             ),
+            const SizedBox(height: 14),
+            if (wallets.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'Belum ada dompet.\nBuat dompet dulu di halaman Profil.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: SakuColors.neutral600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...List.generate(wallets.length, (index) {
+                final wallet = wallets[index];
+                final selected = wallet.id == selectedId;
+                return _WalletTile(
+                  name: wallet.name,
+                  balance: wallet.balance,
+                  selected: selected,
+                  onTap: () => onSelected(wallet.id!, wallet.name),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletTile extends StatelessWidget {
+  const _WalletTile({
+    required this.name,
+    required this.balance,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String name;
+  final int balance;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected ? SakuColors.blue50 : SakuColors.neutral50,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                const Icon(Icons.credit_card_rounded,
+                    color: SakuColors.mango500),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        formatPlain(balance),
+                        style: const TextStyle(
+                          color: SakuColors.neutral600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  const Icon(Icons.check_circle_rounded,
+                      color: SakuColors.blue300),
+              ],
+            ),
           ),
-          Icon(Icons.keyboard_arrow_down_rounded, color: SakuColors.black),
-        ],
+        ),
       ),
     );
   }
@@ -567,7 +1206,7 @@ class _AmountDisplay extends StatelessWidget {
       child: Text(
         formatPlain(int.tryParse(amount) ?? 0),
         style: const TextStyle(
-          color: SakuColors.neutral700,
+          color: SakuColors.neutral300,
           fontSize: 31,
           fontWeight: FontWeight.w700,
         ),
@@ -581,45 +1220,48 @@ class _CalculatorPad extends StatelessWidget {
 
   final ValueChanged<String> onTap;
 
-  static const _gridRows = [
-    ['7', '8', '9', 'C'],
-    ['4', '5', '6', 'back'],
-    ['1', '2', '3', '+'],
-    ['0', '000', '=', '-'],
+  static const _rows = [
+    ['x', '-', '+', 'back'],
+    ['1', '2', '3', 'C'],
+    ['4', '5', '6', '='],
+    ['7', '8', '9', 'Simpan'],
+    ['', '0', '000', 'Simpan'],
   ];
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 220,
+      height: 180,
       child: Column(
-        children: [
-          for (final row in _gridRows)
-            Expanded(
-              child: Row(
-                children: row.map((label) {
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
+        children: List.generate(_rows.length, (rowIndex) {
+          return Expanded(
+            child: Row(
+              children: List.generate(_rows[rowIndex].length, (index) {
+                final label = _rows[rowIndex][index];
+                if (label.isEmpty) {
+                  return const Expanded(child: SizedBox.shrink());
+                }
+                if (label == 'Simpan' && rowIndex == 4) {
+                  return const Expanded(child: SizedBox.shrink());
+                }
+                final rowSpan = label == 'Simpan';
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: SizedBox(
+                      height: rowSpan ? double.infinity : null,
                       child: _KeypadButton(
                         label: label,
+                        tall: rowSpan,
                         onTap: () => onTap(label),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }),
             ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(3),
-              child: _KeypadButton(
-                label: 'Simpan',
-                onTap: () => onTap('Simpan'),
-              ),
-            ),
-          ),
-        ],
+          );
+        }),
       ),
     );
   }
@@ -629,19 +1271,21 @@ class _KeypadButton extends StatelessWidget {
   const _KeypadButton({
     required this.label,
     required this.onTap,
+    this.tall = false,
   });
 
   final String label;
   final VoidCallback onTap;
+  final bool tall;
 
   @override
   Widget build(BuildContext context) {
     final isAction = label == '=' || label == 'Simpan';
-    final isMuted = label == 'back' || label == 'C';
+    final isMuted = label == 'back' || label == 'C' || label == 'Simpan';
 
     return Material(
       color: isAction
-          ? (label == '=' ? SakuColors.blue100 : SakuColors.blue300)
+          ? (label == '=' ? SakuColors.blue100 : SakuColors.neutral300)
           : (isMuted ? SakuColors.neutral100 : SakuColors.white),
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
@@ -649,11 +1293,13 @@ class _KeypadButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         child: Center(
           child: label == 'back'
-              ? const Icon(Icons.backspace_outlined, color: SakuColors.neutral600)
+              ? const Icon(Icons.backspace_outlined,
+                  color: SakuColors.neutral600)
               : Text(
                   label,
                   style: TextStyle(
-                    color: label == 'Simpan' ? SakuColors.white : SakuColors.black,
+                    color:
+                        label == 'Simpan' ? SakuColors.white : SakuColors.black,
                     fontSize: label == 'Simpan' ? 18 : 25,
                     fontWeight: FontWeight.w800,
                   ),

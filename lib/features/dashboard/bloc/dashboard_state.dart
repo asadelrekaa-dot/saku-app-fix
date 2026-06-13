@@ -1,19 +1,32 @@
-part of 'dashboard_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+import 'dashboard_models.dart';
+
+part 'dashboard_state.freezed.dart';
 
 @freezed
 class DashboardState with _$DashboardState {
-  const factory DashboardState({
-    @Default(0) int currentIndex,
-    @Default(DashboardSurface.main) DashboardSurface surface,
-    @Default(<DashboardTransaction>[]) List<DashboardTransaction> transactions,
-    @Default(<DashboardBudget>[]) List<DashboardBudget> budgets,
-    DashboardTransaction? editingTransaction,
-    @Default(false) bool isLoading,
-    String? errorMessage,
-  }) = _DashboardState;
-}
+  const DashboardState._();
 
-extension DashboardStateX on DashboardState {
+  const factory DashboardState({
+    required int currentIndex,
+    required DashboardSurface surface,
+    DashboardTransaction? editingTransaction,
+    required List<DashboardTransaction> transactions,
+    required List<DashboardBudget> budgets,
+
+  }) = _DashboardState;
+
+  factory DashboardState.initial({bool openAddNote = false}) {
+    return DashboardState(
+      currentIndex: 0,
+      surface:
+          openAddNote ? DashboardSurface.addExpense : DashboardSurface.main,
+      transactions: initialTransactions,
+      budgets: initialBudgets,
+    );
+  }
+
   int get currentBalance => transactions.fold<int>(
         0,
         (balance, item) => balance + item.amountValue,

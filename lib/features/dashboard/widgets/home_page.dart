@@ -1,7 +1,11 @@
 import 'dashboard_shared.dart';
 import 'history_page.dart';
 
-class HomeDashboard extends StatelessWidget {
+import 'dart:developer';
+
+import '../../../core/repository/local_repository.dart';
+
+class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     required this.userName,
@@ -9,6 +13,7 @@ class HomeDashboard extends StatelessWidget {
     required this.onOpenHistory,
     required this.onOpenBudget,
     required this.onOpenInsight,
+    required this.onMarkSettled,
   });
 
   final String userName;
@@ -16,20 +21,75 @@ class HomeDashboard extends StatelessWidget {
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenInsight;
+  final ValueChanged<DashboardTransaction> onMarkSettled;
+
+  @override
+  State<HomeDashboard> createState() => _HomeDashboardState();
+}
+
+class _HomeDashboardState extends State<HomeDashboard> {
+  int _walletBalance = 0;
+  final _repo = const LocalRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  @override
+  void didUpdateWidget(HomeDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.transactions != oldWidget.transactions) {
+      _loadWalletBalance();
+    }
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final wallets = await _repo.loadWallets();
+      if (!mounted) return;
+      setState(() {
+        _walletBalance = wallets.fold<int>(0, (sum, w) => sum + w.balance);
+      });
+    } catch (e, s) {
+      log('[HomeDashboard] loadWalletBalance error', error: e, stackTrace: s);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final transactions = widget.transactions;
+    final totalBalance = transactions.fold<int>(
+          0,
+          (sum, item) => sum + item.amountValue,
+        ) +
+        _walletBalance;
+    final expense = transactions
+        .where((item) => item.amountValue < 0)
+        .fold<int>(0, (sum, item) => sum + item.amountValue.abs());
+    final income = transactions
+        .where((item) => item.amountValue > 0)
+        .fold<int>(0, (sum, item) => sum + item.amountValue);
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 96),
       children: [
         _HomeHeroSection(
-          userName: userName,
-          onOpenBudget: onOpenBudget,
-          onOpenInsight: onOpenInsight,
+          userName: widget.userName,
+          balance: totalBalance,
+          expense: expense,
+          income: income,
+          onOpenBudget: widget.onOpenBudget,
+          onOpenInsight: widget.onOpenInsight,
         ),
         _HomeBodyPanel(
           transactions: transactions,
-          onOpenHistory: onOpenHistory,
+          onOpenHistory: widget.onOpenHistory,
+          debtTransactions: transactions.where((t) =>
+              (t.title == 'Hutang' || t.title == 'Beri Pinjaman') &&
+              !t.settled).toList(),
+          onMarkSettled: widget.onMarkSettled,
         ),
       ],
     );
@@ -39,11 +99,17 @@ class HomeDashboard extends StatelessWidget {
 class _HomeHeroSection extends StatelessWidget {
   const _HomeHeroSection({
     required this.userName,
+    required this.balance,
+    required this.expense,
+    required this.income,
     required this.onOpenBudget,
     required this.onOpenInsight,
   });
 
   final String userName;
+  final int balance;
+  final int expense;
+  final int income;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenInsight;
 
@@ -90,6 +156,9 @@ class _HomeHeroSection extends StatelessWidget {
             top: 36,
             child: _BalanceCard(
               userName: userName,
+              balance: balance,
+              expense: expense,
+              income: income,
             ),
           ),
           Positioned(
@@ -111,10 +180,14 @@ class _HomeBodyPanel extends StatelessWidget {
   const _HomeBodyPanel({
     required this.transactions,
     required this.onOpenHistory,
+    required this.debtTransactions,
+    required this.onMarkSettled,
   });
 
   final List<DashboardTransaction> transactions;
   final VoidCallback onOpenHistory;
+  final List<DashboardTransaction> debtTransactions;
+  final ValueChanged<DashboardTransaction> onMarkSettled;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +201,10 @@ class _HomeBodyPanel extends StatelessWidget {
             onOpenMore: onOpenHistory,
           ),
           const SizedBox(height: 20),
-          const _ActiveDebtCard(),
+          _ActiveDebtCard(
+            debtTransactions: debtTransactions,
+            onMarkSettled: onMarkSettled,
+          ),
         ],
       ),
     );
@@ -138,9 +214,15 @@ class _HomeBodyPanel extends StatelessWidget {
 class _BalanceCard extends StatelessWidget {
   const _BalanceCard({
     required this.userName,
+    required this.balance,
+    required this.expense,
+    required this.income,
   });
 
   final String userName;
+  final int balance;
+  final int expense;
+  final int income;
 
   @override
   Widget build(BuildContext context) {
@@ -214,12 +296,12 @@ class _BalanceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: SakuColors.blue300, width: 2),
             ),
-            child: const FittedBox(
+            child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                '12.000.000',
-                style: TextStyle(
+                formatPlain(balance),
+                style: const TextStyle(
                   color: SakuColors.neutral700,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -235,21 +317,21 @@ class _BalanceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: SakuColors.blue300, width: 2),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Expanded(
                   child: _HeroMetric(
                     title: 'Pengeluaran',
-                    amount: '1.000.000',
+                    amount: formatPlain(expense),
                     icon: Icons.trending_down_rounded,
                     color: SakuColors.danger,
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _HeroMetric(
                     title: 'Pemasukan',
-                    amount: '13.000.000',
+                    amount: formatPlain(income),
                     icon: Icons.trending_up_rounded,
                     color: SakuColors.success,
                   ),
@@ -433,8 +515,52 @@ class _RecentNotesCard extends StatelessWidget {
   final List<DashboardTransaction> transactions;
   final VoidCallback onOpenMore;
 
+  String _day(String dateStr) {
+    final parts = dateStr.split(' ');
+    return parts.isNotEmpty ? parts[0] : '';
+  }
+
+  String _month(String dateStr) {
+    final parts = dateStr.split(' ');
+    return parts.length > 1 ? parts[1] : '';
+  }
+
+  String _dayName(String dateStr) {
+    final parsed = _tryParseDate(dateStr);
+    if (parsed == null) return '';
+    const days = [
+      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
+    ];
+    return days[parsed.weekday - 1];
+  }
+
+  DateTime? _tryParseDate(String dateStr) {
+    try {
+      const months = {
+        'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4,
+        'Mei': 5, 'Juni': 6, 'Juli': 7, 'Agustus': 8,
+        'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12
+      };
+      final parts = dateStr.split(' ');
+      if (parts.length < 3) return null;
+      final day = int.tryParse(parts[0]);
+      final month = months[parts[1]];
+      final year = int.tryParse(parts[2]);
+      if (day == null || month == null || year == null) return null;
+      return DateTime(year, month, day);
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final latestDate = transactions.isNotEmpty ? transactions.first.date : '';
+    final totalDisplay = transactions.fold<int>(
+      0,
+      (sum, t) => sum + t.amountValue.abs(),
+    );
+
     return Container(
       decoration: cardDecoration(radius: 18),
       child: Column(
@@ -456,32 +582,32 @@ class _RecentNotesCard extends StatelessWidget {
           Container(
             color: SakuColors.blue50,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-            child: const Row(
+            child: Row(
               children: [
                 Text(
-                  '18',
-                  style: TextStyle(
+                  _day(latestDate),
+                  style: const TextStyle(
                     color: SakuColors.black,
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'April',
-                        style: TextStyle(
+                        _month(latestDate),
+                        style: const TextStyle(
                           color: SakuColors.black,
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       Text(
-                        'Sabtu',
-                        style: TextStyle(
+                        _dayName(latestDate),
+                        style: const TextStyle(
                           color: SakuColors.neutral300,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -491,8 +617,8 @@ class _RecentNotesCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '11.970.000',
-                  style: TextStyle(
+                  formatPlain(totalDisplay),
+                  style: const TextStyle(
                     color: SakuColors.neutral700,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
@@ -551,17 +677,26 @@ class _RecentNotesCard extends StatelessWidget {
 }
 
 class _ActiveDebtCard extends StatelessWidget {
-  const _ActiveDebtCard();
+  const _ActiveDebtCard({
+    required this.debtTransactions,
+    required this.onMarkSettled,
+  });
 
-  void _openPaymentDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => const _HomeDebtPaymentDialog(),
-    );
+  final List<DashboardTransaction> debtTransactions;
+  final ValueChanged<DashboardTransaction> onMarkSettled;
+
+  String _personName(DashboardTransaction t) {
+    final cleaned = t.note
+        .replaceFirst(RegExp(r'^Pinjaman ke\s+', caseSensitive: false), '')
+        .replaceFirst(RegExp(r'^Hutang ke\s+', caseSensitive: false), '')
+        .trim();
+    return cleaned.isEmpty ? 'Nama' : cleaned;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (debtTransactions.isEmpty) return const SizedBox.shrink();
+
     return Container(
       decoration: cardDecoration(radius: 18),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
@@ -577,21 +712,23 @@ class _ActiveDebtCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _DebtTile(
-            title: 'Hutang',
-            person: 'Anisa',
-            amount: '30.000',
-            due: '30 April 2026',
-            onTap: () => _openPaymentDialog(context),
-          ),
-          const Divider(height: 1, color: SakuColors.neutral100),
-          _DebtTile(
-            title: 'Hutang',
-            person: 'Anisa',
-            amount: '30.000',
-            due: '30 April 2026',
-            onTap: () => _openPaymentDialog(context),
-          ),
+          ...List.generate(debtTransactions.length, (index) {
+            final t = debtTransactions[index];
+            return Column(
+              children: [
+                if (index > 0)
+                  const Divider(height: 1, color: SakuColors.neutral100),
+                _DebtTile(
+                  title: t.title,
+                  person: _personName(t),
+                  amount: formatPlain(t.amountValue.abs()),
+                  due: t.date,
+                  settled: t.settled,
+                  onMarkSettled: () => onMarkSettled(t),
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -604,21 +741,23 @@ class _DebtTile extends StatelessWidget {
     required this.person,
     required this.amount,
     required this.due,
-    required this.onTap,
+    required this.onMarkSettled,
+    this.settled = false,
   });
 
   final String title;
   final String person;
   final String amount;
   final String due;
-  final VoidCallback onTap;
+  final VoidCallback onMarkSettled;
+  final bool settled;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: onMarkSettled,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -628,13 +767,16 @@ class _DebtTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: SakuColors.white,
+                  color: settled ? SakuColors.success.withValues(alpha: 0.1) : SakuColors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: SakuColors.neutral300, width: 1.5),
+                  border: Border.all(
+                    color: settled ? SakuColors.success : SakuColors.neutral300,
+                    width: 1.5,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.payments_outlined,
-                  color: SakuColors.sage500,
+                child: Icon(
+                  settled ? Icons.check_circle_rounded : Icons.payments_outlined,
+                  color: settled ? SakuColors.success : SakuColors.sage500,
                   size: 25,
                 ),
               ),
@@ -646,17 +788,17 @@ class _DebtTile extends StatelessWidget {
                     Text.rich(
                       TextSpan(
                         text: title,
-                        style: const TextStyle(
-                          color: SakuColors.black,
+                        style: TextStyle(
+                          color: settled ? SakuColors.neutral300 : SakuColors.black,
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0,
                         ),
-                        children: const [
+                        children: [
                           TextSpan(
-                            text: ' Belum Lunas',
+                            text: settled ? ' Lunas' : ' Belum Lunas',
                             style: TextStyle(
-                              color: SakuColors.danger,
+                              color: settled ? SakuColors.success : SakuColors.danger,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0,
@@ -669,11 +811,11 @@ class _DebtTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$person - minjam uang',
+                      '$person - ${title == 'Beri Pinjaman' ? 'minjam uang' : 'utang'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: SakuColors.neutral300,
+                      style: TextStyle(
+                        color: settled ? SakuColors.neutral100 : SakuColors.neutral300,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0,
@@ -693,8 +835,8 @@ class _DebtTile extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         amount,
-                        style: const TextStyle(
-                          color: SakuColors.black,
+                        style: TextStyle(
+                          color: settled ? SakuColors.neutral300 : SakuColors.black,
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0,
@@ -707,8 +849,8 @@ class _DebtTile extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         due,
-                        style: const TextStyle(
-                          color: SakuColors.neutral300,
+                        style: TextStyle(
+                          color: settled ? SakuColors.neutral100 : SakuColors.neutral300,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0,
@@ -719,18 +861,24 @@ class _DebtTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: SakuColors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: SakuColors.neutral300, width: 2),
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: SakuColors.neutral300,
-                  size: 21,
+              GestureDetector(
+                onTap: onMarkSettled,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: settled ? SakuColors.success : SakuColors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: settled ? SakuColors.success : SakuColors.neutral300,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    settled ? Icons.check_rounded : Icons.check_rounded,
+                    color: settled ? SakuColors.white : SakuColors.neutral300,
+                    size: 21,
+                  ),
                 ),
               ),
             ],
@@ -741,101 +889,4 @@ class _DebtTile extends StatelessWidget {
   }
 }
 
-class _HomeDebtPaymentDialog extends StatelessWidget {
-  const _HomeDebtPaymentDialog();
 
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      backgroundColor: SakuColors.white,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bayar hutang dari dompet mana?',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: SakuColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Row(
-              children: [
-                Expanded(
-                  child: DialogSelectField(
-                    label: 'Dompet',
-                    value: 'BSI',
-                    icon: Icons.credit_card_rounded,
-                    trailing: Icons.keyboard_arrow_down_rounded,
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: DialogSelectField(
-                    label: 'Tanggal Lunas',
-                    value: '12 Juni 2026',
-                    icon: null,
-                    trailing: Icons.calendar_month_rounded,
-                    muted: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SakuColors.mango500,
-                      side: const BorderSide(
-                        color: SakuColors.mango500,
-                        width: 2,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                    ),
-                    child: const Text(
-                      'Kembali',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: SakuColors.neutral300,
-                      foregroundColor: SakuColors.neutral600,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                    ),
-                    child: const Text(
-                      'Lunas',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

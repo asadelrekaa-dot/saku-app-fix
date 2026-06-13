@@ -1,45 +1,140 @@
 import 'dashboard_shared.dart';
+import '../../../core/api/laravel_api_service.dart';
+import '../data/model/notification_model.dart';
 
-class NotificationsDashboard extends StatelessWidget {
+class NotificationsDashboard extends StatefulWidget {
   const NotificationsDashboard({super.key, required this.onBack});
 
   final VoidCallback onBack;
 
-  static const _items = [
-    NotificationItem(
-      title: 'Jangan lupa catat ya. sudah ada\npengeluaran hari ini?',
-      time: '4:40 PM',
-      icon: Icons.edit_note_rounded,
-      iconColor: SakuColors.neutral700,
-    ),
-    NotificationItem(
-      title:
-          'Pengeluaran meningkat kamu\nmenghabiskan lebih banyak dari pada\nbiasanya',
-      time: '6.30 PM',
-      icon: Icons.trending_down_rounded,
-      iconColor: SakuColors.danger,
-    ),
-    NotificationItem(
-      title:
-          'Pengeluaran tercatat\nkamu baru saja mengeluarkan Rp\n50.000 untuk makan',
-      time: '8.25 PM',
-      icon: Icons.edit_note_rounded,
-      iconColor: SakuColors.neutral700,
-    ),
-  ];
+  @override
+  State<NotificationsDashboard> createState() => _NotificationsDashboardState();
+}
+
+class _NotificationsDashboardState extends State<NotificationsDashboard> {
+  late Future<List<NotificationItem>> _notificationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationsFuture = fetchNotifications();
+  }
+
+  Future<List<NotificationItem>> fetchNotifications() async {
+    try {
+      final raw = await LaravelApiService.instance.getNotifications();
+      return raw.map((json) => NotificationItem.fromJson(json)).toList();
+    } catch (_) {
+      return _fallbackNotifications();
+    }
+  }
+
+  List<NotificationItem> _fallbackNotifications() {
+    return const [
+      NotificationItem(
+        id: 1,
+        title: 'Jangan lupa catat ya. sudah ada\npengeluaran hari ini?',
+        time: '4:40 PM',
+        icon: Icons.edit_note_rounded,
+        iconColor: SakuColors.neutral700,
+        isRead: false,
+      ),
+      NotificationItem(
+        id: 2,
+        title: 'Pengeluaran meningkat kamu\nmenghabiskan lebih banyak dari pada\nbiasanya',
+        time: '6.30 PM',
+        icon: Icons.trending_down_rounded,
+        iconColor: SakuColors.danger,
+        isRead: false,
+      ),
+      NotificationItem(
+        id: 3,
+        title: 'Pengeluaran tercatat\nkamu baru saja mengeluarkan Rp\n50.000 untuk makan',
+        time: '8.25 PM',
+        icon: Icons.edit_note_rounded,
+        iconColor: SakuColors.neutral700,
+        isRead: false,
+      ),
+    ];
+  }
+
+  // Fungsi refresh jika user menarik halaman ke bawah (Pull to Refresh)
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _notificationsFuture = fetchNotifications();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ChildPageTopBar(title: 'Notifikasi', onBack: onBack),
+        ChildPageTopBar(title: 'Notifikasi', onBack: widget.onBack),
         Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            itemCount: _items.length,
-            itemBuilder: (context, index) {
-              return _NotificationRow(item: _items[index]);
-            },
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh, // Fitur tarik layar ke bawah untuk reload data nyata
+            color: SakuColors.mango500,
+            child: FutureBuilder<List<NotificationItem>>(
+              future: _notificationsFuture,
+              builder: (context, snapshot) {
+                // 1. STATE JIKA SEDANG MEMUAT DATA (LOADING)
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(SakuColors.mango500),
+                    ),
+                  );
+                }
+
+                // 2. STATE JIKA TERJADI LOGICAL ERROR / KONEKSI TIMEOUT
+                if (snapshot.hasError) {
+                  return ListView( // Harus pakai listview agar RefreshIndicator bisa bekerja saat error
+                    children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            '${snapshot.error}'.replaceAll('Exception: ', ''),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: SakuColors.black,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                // 3. STATE JIKA DATA DITERIMA NAMUN KOSONG (KOSONG DI DATABASE)
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return ListView(
+                    children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                      const EmptyStateCard(
+                        icon: Icons.notifications_none_rounded,
+                        title: 'Belum Ada Notifikasi',
+                        message: 'Seluruh pemberitahuan aktivitas keuanganmu\nakan muncul di sini.',
+                      ),
+                    ],
+                  );
+                }
+
+                // 4. STATE JIKA DATA BERHASIL DIAMBIL SECARA REALTIME
+                final items = snapshot.data!;
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  physics: const AlwaysScrollableScrollPhysics(), // Menjaga agar selalu bisa di-scroll & di-refresh
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return _NotificationRow(item: items[index]);
+                  },
+                );
+              },
+            ),
           ),
         ),
       ],

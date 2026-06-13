@@ -1,8 +1,7 @@
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
+import '../../core/api/laravel_api_service.dart';
 import 'widgets/budget_page.dart';
 import 'widgets/dashboard_content.dart';
 import 'widgets/dashboard_shared.dart';
@@ -10,14 +9,14 @@ import 'widgets/dashboard_shared.dart';
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
-    this.userName = 'Asadel',
-    this.userEmail = 'adel123@gmail.com',
+    this.userName,
+    this.userEmail,
     this.openAddNote = false,
   });
 
   static const routeName = '/home';
-  final String userName;
-  final String userEmail;
+  final String? userName;
+  final String? userEmail;
   final bool openAddNote;
 
   @override
@@ -25,7 +24,33 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  String _userName = '';
+  String _userEmail = '';
+  bool _loadingUser = true;
   static const _homeWidgetProvider = 'SakuSummaryWidgetProvider';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    if (widget.userName != null && widget.userEmail != null) {
+      _userName = widget.userName!;
+      _userEmail = widget.userEmail!;
+      if (mounted) setState(() => _loadingUser = false);
+      return;
+    }
+    final saved = await LaravelApiService.instance.getSavedUser();
+    if (mounted) {
+      setState(() {
+        _userName = saved?.name ?? 'Pengguna';
+        _userEmail = saved?.email ?? '';
+        _loadingUser = false;
+      });
+    }
+  }
 
   Future<void> _requestHomeWidget() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
@@ -57,8 +82,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'Tekan lama area kosong di homescreen, pilih Widget, lalu pilih Saku Ringkasan.',
         );
       }
-    } catch (e, s) {
-      log('[DashboardPage] requestPinHomeWidget error', error: e, stackTrace: s);
+    } catch (_) {
       if (!mounted) return;
       showInfoDialog(
         context,
@@ -71,33 +95,45 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingUser) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return BlocProvider(
       create: (_) => DashboardBloc(openAddNote: widget.openAddNote)
-        ..add(const DashboardEvent.started()),
+        ..add(const DashboardStarted()),
       child: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           final bloc = context.read<DashboardBloc>();
           return Scaffold(
             backgroundColor: SakuColors.neutral50,
             body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final pageWidth =
-                      constraints.maxWidth > 430 ? 430.0 : constraints.maxWidth;
+              child: Column(
+                children: [
+Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final pageWidth = constraints.maxWidth > 430
+                            ? 430.0
+                            : constraints.maxWidth;
 
-                  return Center(
-                    child: SizedBox(
-                      width: pageWidth,
-                      height: constraints.maxHeight,
-                      child: DashboardContent(
-                        state: state,
-                        userName: widget.userName,
-                        userEmail: widget.userEmail,
-                        onRequestHomeWidget: _requestHomeWidget,
-                      ),
+                        return Center(
+                          child: SizedBox(
+                            width: pageWidth,
+                            height: constraints.maxHeight,
+                            child: DashboardContent(
+                              state: state,
+                              userName: _userName,
+                              userEmail: _userEmail,
+                              onRequestHomeWidget: _requestHomeWidget,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
             floatingActionButton: state.hidesFloatingActionButton
@@ -109,14 +145,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           context: context,
                           builder: (context) => BudgetFormDialog(
                             onSave: (item) {
-                              bloc.add(DashboardEvent.budgetAdded(item));
+                              bloc.add(DashboardBudgetAdded(item));
                               Navigator.of(context).pop();
                             },
                           ),
                         );
                         return;
                       }
-                      bloc.add(const DashboardEvent.addNoteShown());
+                      bloc.add(const DashboardAddNoteShown());
                     },
                     backgroundColor: SakuColors.mango500,
                     foregroundColor: SakuColors.white,
@@ -136,7 +172,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: NavigationBar(
                           selectedIndex: state.currentIndex,
                           onDestinationSelected: (index) {
-                            bloc.add(DashboardEvent.tabSelected(index));
+                            bloc.add(DashboardTabSelected(index));
                           },
                           indicatorColor: SakuColors.blue100,
                           destinations: const [

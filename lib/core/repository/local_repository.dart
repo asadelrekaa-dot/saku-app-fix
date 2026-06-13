@@ -27,7 +27,7 @@ class LocalRepository {
     final path = await getDatabasesPath();
     return openDatabase(
       '$path/saku.db',
-      version: 2,
+      version: 6,
       onCreate: _createDb,
       onUpgrade: _upgradeDb,
     );
@@ -45,6 +45,7 @@ class LocalRepository {
         settled INTEGER NOT NULL DEFAULT 0,
         api_id INTEGER,
         api_type TEXT,
+        raw_date TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     ''');
@@ -53,7 +54,15 @@ class LocalRepository {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         amount_value INTEGER NOT NULL,
+        api_id INTEGER,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE wallets (
+        id INTEGER PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        balance INTEGER NOT NULL
       )
     ''');
   }
@@ -65,75 +74,73 @@ class LocalRepository {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           amount_value INTEGER NOT NULL,
+          api_id INTEGER,
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       ''');
     }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE wallets (
+          id INTEGER PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          balance INTEGER NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE transactions ADD COLUMN raw_date TEXT');
+    }
+    if (oldVersion < 5) {
+      await db.delete('transactions');
+      await db.delete('budgets');
+      await db.delete('wallets');
+    }
+    if (oldVersion < 6) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN raw_date TEXT');
+      } catch (_) {
+        // Column already exists, ignore.
+      }
+    }
   }
+
+  // ── Transactions ──
 
   Future<List<DashboardTransaction>> loadTransactions() async {
     try {
       final db = await database;
       final rows = await db.query('transactions', orderBy: 'created_at DESC');
-      return rows.map((row) {
-        final amountValue = (row['amount_value'] as int?) ?? 0;
-        return DashboardTransaction(
-          title: (row['title'] as String?) ?? '',
-          note: (row['note'] as String?) ?? '',
-          amountValue: amountValue,
-          date: (row['date'] as String?) ?? '',
-          time: (row['time'] as String?) ?? '',
-          icon: categoryIcon((row['title'] as String?) ?? ''),
-          color: _colorFor(amountValue),
-          settled: (row['settled'] as int?) == 1,
-          apiId: row['api_id'] as int?,
-          apiType: row['api_type'] as String?,
-        );
-      }).toList();
+      return rows.map(_rowToTransaction).toList();
     } catch (e, s) {
       log('[LocalRepository] loadTransactions error', error: e, stackTrace: s);
       return [];
     }
   }
 
-  Future<void> saveTransaction(DashboardTransaction item) async {
+  DashboardTransaction _rowToTransaction(Map<String, dynamic> row) {
+    final amountValue = (row['amount_value'] as int?) ?? 0;
+    return DashboardTransaction(
+      title: (row['title'] as String?) ?? '',
+      note: (row['note'] as String?) ?? '',
+      amountValue: amountValue,
+      date: (row['date'] as String?) ?? '',
+      time: (row['time'] as String?) ?? '',
+      icon: categoryIcon((row['title'] as String?) ?? ''),
+      color: _colorFor(amountValue),
+      settled: (row['settled'] as int?) == 1,
+      apiId: row['api_id'] as int?,
+      apiType: row['api_type'] as String?,
+      rawDate: row['raw_date'] as String?,
+    );
+  }
+
+  Future<void> addTransaction(DashboardTransaction item) async {
     try {
       final db = await database;
       await db.insert('transactions', _toMap(item));
     } catch (e, s) {
-      log('[LocalRepository] saveTransaction error', error: e, stackTrace: s);
-    }
-  }
-
-  Future<List<DashboardBudget>> loadBudgets() async {
-    try {
-      final db = await database;
-      final rows = await db.query('budgets', orderBy: 'created_at DESC');
-      return rows.map((row) {
-        final amountValue = (row['amount_value'] as int?) ?? 0;
-        return DashboardBudget(
-          title: (row['title'] as String?) ?? '',
-          amountValue: amountValue,
-          remaining: 'sisa 100%',
-          progress: 1,
-          icon: categoryIcon((row['title'] as String?) ?? ''),
-        );
-      }).toList();
-    } catch (e, s) {
-      log('[LocalRepository] loadBudgets error', error: e, stackTrace: s);
-      return [];
-    }
-  }
-
-  Future<void> saveBudget(DashboardBudget item) async {
-    try {
-      final db = await database;
-      await db.insert('budgets', {
-        'title': item.title,
-        'amount_value': item.amountValue,
-      });
-    } catch (e, s) {
-      log('[LocalRepository] saveBudget error', error: e, stackTrace: s);
+      log('[LocalRepository] addTransaction error', error: e, stackTrace: s);
     }
   }
 
@@ -181,6 +188,105 @@ class LocalRepository {
     }
   }
 
+  Future<void> replaceAllTransactions(List<DashboardTransaction> items) async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.delete('transactions');
+        for (final item in items) {
+          await txn.insert('transactions', _toMap(item));
+        }
+      });
+    } catch (e, s) {
+      log('[LocalRepository] replaceAllTransactions error', error: e, stackTrace: s);
+    }
+  }
+
+  // ── Budgets ──
+
+  Future<List<DashboardBudget>> loadBudgets() async {
+    try {
+      final db = await database;
+      final rows = await db.query('budgets', orderBy: 'created_at DESC');
+      return rows.map(_rowToBudget).toList();
+    } catch (e, s) {
+      log('[LocalRepository] loadBudgets error', error: e, stackTrace: s);
+      return [];
+    }
+  }
+
+  DashboardBudget _rowToBudget(Map<String, dynamic> row) {
+    final amountValue = (row['amount_value'] as int?) ?? 0;
+    return DashboardBudget(
+      title: (row['title'] as String?) ?? '',
+      amountValue: amountValue,
+      remaining: 'sisa Rp 0',
+      progress: 0,
+      icon: categoryIcon((row['title'] as String?) ?? ''),
+      apiId: row['api_id'] as int?,
+    );
+  }
+
+  Future<void> addBudget(DashboardBudget item) async {
+    try {
+      final db = await database;
+      await db.insert('budgets', _budgetToMap(item));
+    } catch (e, s) {
+      log('[LocalRepository] addBudget error', error: e, stackTrace: s);
+    }
+  }
+
+  Future<void> replaceAllBudgets(List<DashboardBudget> items) async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.delete('budgets');
+        for (final item in items) {
+          await txn.insert('budgets', _budgetToMap(item));
+        }
+      });
+    } catch (e, s) {
+      log('[LocalRepository] replaceAllBudgets error', error: e, stackTrace: s);
+    }
+  }
+
+  // ── Wallets ──
+
+  Future<List<WalletItem>> loadWallets() async {
+    try {
+      final db = await database;
+      final rows = await db.query('wallets');
+      return rows.map((row) => WalletItem(
+        id: row['id'] as int?,
+        name: (row['name'] as String?) ?? '',
+        balance: (row['balance'] as int?) ?? 0,
+      )).toList();
+    } catch (e, s) {
+      log('[LocalRepository] loadWallets error', error: e, stackTrace: s);
+      return [];
+    }
+  }
+
+  Future<void> replaceAllWallets(List<WalletItem> items) async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.delete('wallets');
+        for (final item in items) {
+          await txn.insert('wallets', {
+            'id': item.id,
+            'name': item.name,
+            'balance': item.balance,
+          });
+        }
+      });
+    } catch (e, s) {
+      log('[LocalRepository] replaceAllWallets error', error: e, stackTrace: s);
+    }
+  }
+
+  // ── Model conversion ──
+
   Map<String, dynamic> _toMap(DashboardTransaction item) {
     return {
       'title': item.title,
@@ -191,6 +297,15 @@ class LocalRepository {
       'settled': item.settled ? 1 : 0,
       'api_id': item.apiId,
       'api_type': item.apiType,
+      'raw_date': item.rawDate,
+    };
+  }
+
+  Map<String, dynamic> _budgetToMap(DashboardBudget item) {
+    return {
+      'title': item.title,
+      'amount_value': item.amountValue,
+      'api_id': item.apiId,
     };
   }
 }

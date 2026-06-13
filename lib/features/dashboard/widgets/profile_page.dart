@@ -1,7 +1,13 @@
-import 'dashboard_shared.dart';
+import 'dart:developer';
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+
 import '../../../core/api/laravel_api_service.dart';
+import '../../../core/repository/local_repository.dart';
 import '../../auth/google_auth_service.dart';
 import '../../auth/login_page.dart';
+import 'dashboard_shared.dart';
 
 class ProfileDashboard extends StatefulWidget {
   const ProfileDashboard({
@@ -24,29 +30,103 @@ class ProfileDashboard extends StatefulWidget {
 class ProfileDashboardState extends State<ProfileDashboard> {
   late String _profileName;
   late String _profileEmail;
+  String? _photoUrl;
   bool _passwordChanged = false;
   bool _photoUpdated = false;
-  final List<WalletItem> _wallets = [
-    const WalletItem(name: 'BSI', balance: 12000000),
-  ];
+  List<WalletItem> _wallets = [];
+  bool _isLoading = true;
+  final _repo = const LocalRepository();
 
   @override
   void initState() {
     super.initState();
     _profileName = widget.initialName;
     _profileEmail = widget.initialEmail;
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    // Load wallets from local DB instantly
+    final localWallets = await _repo.loadWallets();
+    if (localWallets.isNotEmpty && mounted) {
+      setState(() => _wallets = localWallets);
+    }
+
+    // Load local cached photo
+    final localPhotoPath = '${Directory.systemTemp.path}/saku_photos/profile_photo.jpg';
+    if (await File(localPhotoPath).exists() && mounted) {
+      setState(() => _photoUrl = localPhotoPath);
+    }
+
+    // Load saved local user data
+    final saved = await LaravelApiService.instance.getSavedUser();
+    if (saved != null && mounted) {
+      setState(() {
+        _profileName = saved.name;
+        _profileEmail = saved.email;
+      });
+    }
+
+    try {
+      final profile = await LaravelApiService.instance.getProfile();
+      if (mounted) {
+        setState(() {
+          _profileName = profile.name;
+          _profileEmail = profile.email;
+          _photoUrl = profile.photoUrl ?? _photoUrl;
+        });
+      }
+    } catch (_) {
+      // keep local values
+    }
+    try {
+      final wallets = await LaravelApiService.instance.getWallets();
+      if (mounted) {
+        setState(() => _wallets = wallets);
+      }
+      await _repo.replaceAllWallets(wallets);
+    } catch (_) {
+      // keep local wallets
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _openAddWalletDialog() {
     showDialog<void>(
       context: context,
-      builder: (context) => _WalletFormDialog(
-        onSave: (wallet) {
+      builder: (ctx) => _WalletFormDialog(
+        onSave: (wallet, isPrimary) {
+          Navigator.of(ctx).pop();
           setState(() => _wallets.add(wallet));
-          Navigator.of(context).pop();
+          _syncWalletToApi(wallet, isPrimary: isPrimary);
         },
       ),
     );
+  }
+
+  Future<void> _syncWalletToApi(WalletItem wallet, {bool isPrimary = false}) async {
+    try {
+      final created = await LaravelApiService.instance.createWallet(
+        name: wallet.name,
+        balance: wallet.balance,
+        isPrimary: isPrimary,
+      );
+      if (!mounted) return;
+      setState(() {
+        final index = _wallets.indexWhere(
+          (w) => w.name == wallet.name && w.balance == wallet.balance,
+        );
+        if (index != -1) {
+          _wallets[index] = created;
+        }
+      });
+    } catch (_) {
+      // API failed, keep local version
+    }
+    // Save to local DB regardless of API success
+    await _repo.replaceAllWallets(_wallets);
   }
 
   void _openProfileEditDialog(_ProfileEditField field) {
@@ -59,44 +139,167 @@ class ProfileDashboardState extends State<ProfileDashboard> {
         onSaveName: (value) {
           setState(() => _profileName = value);
           Navigator.of(context).pop();
+          _updateProfileOnApi(value, _profileEmail);
         },
         onSaveEmail: (value) {
           setState(() => _profileEmail = value);
           Navigator.of(context).pop();
+          _updateProfileOnApi(_profileName, value);
         },
-        onSavePassword: () {
-          setState(() => _passwordChanged = true);
+        onSavePassword: (oldPassword, newPassword) {
           Navigator.of(context).pop();
+          _updatePasswordOnApi(oldPassword, newPassword);
         },
       ),
     );
   }
 
-  void _showProfilePhotoInfo() {
-    setState(() => _photoUpdated = true);
-    showInfoDialog(
-      context,
-      title: 'Foto Profil',
-      message:
-          'Untuk demo tanpa database, foto profil ditandai sudah diperbarui. Nanti bisa disambungkan ke galeri/kamera perangkat.',
+  Future<void> _updateProfileOnApi(String name, String email) async {
+    // Save locally first
+    await LaravelApiService.instance.saveUserLocally(
+      name: name,
+      email: email,
     );
+    try {
+      await LaravelApiService.instance.updateProfile(name: name, email: email);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil disimpan secara lokal')),
+      );
+    }
+  }
+
+  Future<void> _updatePasswordOnApi(
+    String oldPassword,
+    String newPassword,
+  ) async {
+    try {
+      await LaravelApiService.instance.updatePassword(
+        currentPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      if (!mounted) return;
+      setState(() => _passwordChanged = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password berhasil diperbarui')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is LaravelApiException
+          ? e.message
+          : 'Gagal memperbarui password';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _showProfilePhotoInfo() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (picked == null || !mounted) return;
+
+      // Save locally first
+      final localDir = await _getLocalPhotoDir();
+      final localPath = '${localDir.path}/profile_photo.jpg';
+      final localFile = File(localPath);
+      await localFile.writeAsBytes(await File(picked.path).readAsBytes());
+
+      if (!mounted) return;
+      setState(() {
+        _photoUpdated = true;
+        _photoUrl = localPath;
+      });
+
+      // Try API upload
+      try {
+        final url = await LaravelApiService.instance.uploadPhoto(File(picked.path));
+        if (!mounted) return;
+        if (url.isNotEmpty) {
+          setState(() => _photoUrl = url);
+        }
+      } catch (e) {
+        log('[Profile] API upload failed, using local photo', error: e);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto profil berhasil diperbarui')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      log('[Profile] Photo pick/upload error', error: e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengunggah foto profil')),
+      );
+    }
+  }
+
+  Future<Directory> _getLocalPhotoDir() async {
+    final dir = Directory('${Directory.systemTemp.path}/saku_photos');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
   }
 
   void _showWalletDetail(WalletItem item) {
     showDialog<void>(
       context: context,
-      builder: (context) => _WalletDetailDialog(item: item),
+      builder: (context) => _WalletDetailDialog(
+        item: item,
+        onDelete: item.id != null ? () => _deleteWallet(item) : null,
+      ),
     );
+  }
+
+  Future<void> _deleteWallet(WalletItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Dompet'),
+        content: Text('Yakin ingin menghapus dompet "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || item.id == null) return;
+    try {
+      await LaravelApiService.instance.deleteWallet(id: item.id!);
+      if (!mounted) return;
+      setState(() => _wallets.removeWhere((w) => w.id == item.id));
+      await _repo.replaceAllWallets(_wallets);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menghapus dompet')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView(
       padding: const EdgeInsets.only(bottom: 96),
       children: [
         _ProfileHeader(
           name: _profileName,
           photoUpdated: _photoUpdated,
+          photoUrl: _photoUrl,
           onEditPhoto: _showProfilePhotoInfo,
         ),
         Container(
@@ -193,7 +396,7 @@ class _ProfileEditDialog extends StatefulWidget {
   final String currentEmail;
   final ValueChanged<String> onSaveName;
   final ValueChanged<String> onSaveEmail;
-  final VoidCallback onSavePassword;
+  final void Function(String oldPassword, String newPassword) onSavePassword;
 
   @override
   State<_ProfileEditDialog> createState() => _ProfileEditDialogState();
@@ -240,8 +443,9 @@ class _ProfileEditDialogState extends State<_ProfileEditDialog> {
 
   void _save() {
     if (_isPassword) {
-      final password = _passwordController.text.trim();
-      if (password.length < 6) {
+      final oldPassword = _primaryController.text.trim();
+      final newPassword = _passwordController.text.trim();
+      if (newPassword.length < 6) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Password baru minimal 6 karakter'),
@@ -249,7 +453,7 @@ class _ProfileEditDialogState extends State<_ProfileEditDialog> {
         );
         return;
       }
-      widget.onSavePassword();
+      widget.onSavePassword(oldPassword, newPassword);
       return;
     }
 
@@ -437,11 +641,13 @@ class _ProfileHeader extends StatelessWidget {
     required this.name,
     required this.photoUpdated,
     required this.onEditPhoto,
+    this.photoUrl,
   });
 
   final String name;
   final bool photoUpdated;
   final VoidCallback onEditPhoto;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -467,12 +673,24 @@ class _ProfileHeader extends StatelessWidget {
                 color: SakuColors.blue50,
                 shape: BoxShape.circle,
                 border: Border.all(color: SakuColors.white, width: 4),
+                image: photoUrl != null
+                    ? DecorationImage(
+                        image: photoUrl!.startsWith('http')
+                            ? NetworkImage(photoUrl!) as ImageProvider
+                            : FileImage(File(photoUrl!)),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: Icon(
-                photoUpdated ? Icons.check_rounded : Icons.person_rounded,
-                color: SakuColors.blue700,
-                size: 62,
-              ),
+              child: photoUrl == null
+                  ? Icon(
+                      photoUpdated
+                          ? Icons.check_rounded
+                          : Icons.person_rounded,
+                      color: SakuColors.blue700,
+                      size: 62,
+                    )
+                  : null,
             ),
           ),
           Positioned(
@@ -591,9 +809,10 @@ class _WalletCard extends StatelessWidget {
 }
 
 class _WalletDetailDialog extends StatelessWidget {
-  const _WalletDetailDialog({required this.item});
+  const _WalletDetailDialog({required this.item, this.onDelete});
 
   final WalletItem item;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -630,7 +849,7 @@ class _WalletDetailDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Detail dompet masih berupa data lokal demo. Nanti bagian ini bisa dipakai untuk edit nama dompet, arsip, dan melihat transaksi dompet.',
+              'Dompet terhubung dengan server. Edit nama, arsip, dan riwayat transaksi dapat dikelola dari sini.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: SakuColors.neutral600,
@@ -639,16 +858,35 @@ class _WalletDetailDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: SakuColors.blue300,
-                  foregroundColor: SakuColors.white,
+            Row(
+              children: [
+                if (onDelete != null) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onDelete?.call();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                      child: const Text('Hapus'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: SakuColors.blue300,
+                      foregroundColor: SakuColors.white,
+                    ),
+                    child: const Text('Tutup'),
+                  ),
                 ),
-                child: const Text('Tutup'),
-              ),
+              ],
             ),
           ],
         ),
@@ -774,7 +1012,7 @@ class _ProfileMenuTile extends StatelessWidget {
 class _WalletFormDialog extends StatefulWidget {
   const _WalletFormDialog({required this.onSave});
 
-  final ValueChanged<WalletItem> onSave;
+  final void Function(WalletItem wallet, bool isPrimary) onSave;
 
   @override
   State<_WalletFormDialog> createState() => _WalletFormDialogState();
@@ -801,7 +1039,7 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
       );
       return;
     }
-    widget.onSave(WalletItem(name: name, balance: balance));
+    widget.onSave(WalletItem(name: name, balance: balance), _isPrimary);
   }
 
   @override
@@ -849,45 +1087,33 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
                   Expanded(
                     child: _WalletDialogField(
                       label: 'Pilih Icon',
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(28),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Pilihan icon tersedia di versi demo'),
+                      child: Container(
+                        height: 51,
+                        decoration: BoxDecoration(
+                          color: SakuColors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: SakuColors.neutral300),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: SakuColors.mango500,
                             ),
-                          );
-                        },
-                        child: Container(
-                          height: 51,
-                          decoration: BoxDecoration(
-                            color: SakuColors.white,
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: SakuColors.neutral300),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.account_balance_wallet_rounded,
-                                color: SakuColors.mango500,
-                              ),
-                              SizedBox(width: 16),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: SakuColors.black,
-                                size: 27,
-                              ),
-                            ],
-                          ),
+                            SizedBox(width: 16),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: SakuColors.black,
+                              size: 27,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
               _WalletDialogField(
                 label: 'Saldo Awal',
                 child: TextField(

@@ -2,10 +2,339 @@ import 'dart:math' as math;
 
 import 'dashboard_shared.dart';
 
-class ChartDashboard extends StatelessWidget {
+enum _PeriodType { daily, weekly, monthly }
+
+class ChartDashboard extends StatefulWidget {
   const ChartDashboard({super.key, required this.transactions});
 
   final List<DashboardTransaction> transactions;
+
+  @override
+  State<ChartDashboard> createState() => _ChartDashboardState();
+}
+
+class _ChartDashboardState extends State<ChartDashboard> {
+  _PeriodType _period = _PeriodType.monthly;
+  late DateTime _anchor;
+  final DateTime _today = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _anchor = _today;
+  }
+
+  /// Only outcome transactions.
+  List<DashboardTransaction> get _outcomes {
+    return widget.transactions.where((t) {
+      if (t.apiType == 'outcome') return true;
+      return t.amountValue < 0 && t.apiType == null;
+    }).toList();
+  }
+
+  List<DashboardTransaction> get _filtered {
+    final all = _outcomes.where((t) => t.rawDate != null).toList();
+    final now = _anchor;
+    return all.where((t) {
+      final date = DateTime.tryParse(t.rawDate!);
+      if (date == null) return false;
+      switch (_period) {
+        case _PeriodType.daily:
+          return date.year == now.year &&
+              date.month == now.month &&
+              date.day == now.day;
+        case _PeriodType.weekly:
+          final weekStart = _weekStart(now);
+          final weekEnd = weekStart.add(const Duration(days: 7));
+          return !date.isBefore(weekStart) && date.isBefore(weekEnd);
+        case _PeriodType.monthly:
+          return date.year == now.year && date.month == now.month;
+      }
+    }).toList();
+  }
+
+  DateTime _weekStart(DateTime d) {
+    final daysFromMonday = d.weekday - 1;
+    return DateTime(d.year, d.month, d.day - daysFromMonday);
+  }
+
+  DateTime get _oneYearAgo =>
+      DateTime(_today.year - 1, _today.month, _today.day);
+
+  void _goBack() {
+    setState(() {
+      final prev = switch (_period) {
+        _PeriodType.daily => _anchor.subtract(const Duration(days: 1)),
+        _PeriodType.weekly => _anchor.subtract(const Duration(days: 7)),
+        _PeriodType.monthly => DateTime(_anchor.year, _anchor.month - 1),
+      };
+      if (!prev.isBefore(_oneYearAgo)) {
+        _anchor = prev;
+      }
+    });
+  }
+
+  void _goForward() {
+    setState(() {
+      final next = switch (_period) {
+        _PeriodType.daily => _anchor.add(const Duration(days: 1)),
+        _PeriodType.weekly => _anchor.add(const Duration(days: 7)),
+        _PeriodType.monthly => DateTime(_anchor.year, _anchor.month + 1),
+      };
+      if (!next.isAfter(_today)) {
+        _anchor = next;
+      }
+    });
+  }
+
+  bool get _canGoBack {
+    final prev = switch (_period) {
+      _PeriodType.daily => _anchor.subtract(const Duration(days: 1)),
+      _PeriodType.weekly => _anchor.subtract(const Duration(days: 7)),
+      _PeriodType.monthly => DateTime(_anchor.year, _anchor.month - 1),
+    };
+    return !prev.isBefore(_oneYearAgo);
+  }
+
+  bool get _canGoForward {
+    final next = switch (_period) {
+      _PeriodType.daily => _anchor.add(const Duration(days: 1)),
+      _PeriodType.weekly => _anchor.add(const Duration(days: 7)),
+      _PeriodType.monthly => DateTime(_anchor.year, _anchor.month + 1),
+    };
+    return !next.isAfter(_today);
+  }
+
+  String get _periodLabel {
+    final months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    switch (_period) {
+      case _PeriodType.daily:
+        return '${_anchor.day} ${months[_anchor.month - 1]} ${_anchor.year}';
+      case _PeriodType.weekly:
+        final start = _weekStart(_anchor);
+        final end = start.add(const Duration(days: 6));
+        final sameMonth = start.month == end.month;
+        if (sameMonth) {
+          return '${start.day} - ${end.day} ${months[start.month - 1]} ${start.year}';
+        }
+        return '${start.day} ${months[start.month - 1]} - ${end.day} ${months[end.month - 1]} ${end.year}';
+      case _PeriodType.monthly:
+        return '${months[_anchor.month - 1]} ${_anchor.year}';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filtered;
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 96),
+      children: [
+        _TopBar(
+          label: _periodLabel,
+          onBack: _canGoBack ? _goBack : null,
+          onForward: _canGoForward ? _goForward : null,
+        ),
+        const SizedBox(height: 12),
+        _PeriodToggle(
+          value: _period,
+          onChanged: (p) => setState(() => _period = p),
+        ),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _SummaryCard(
+            total: filtered.fold<int>(0, (s, t) => s + t.amountValue.abs()),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _CategoryDonut(filtered: filtered),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Top bar ──
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.label,
+    required this.onBack,
+    required this.onForward,
+  });
+
+  final String label;
+  final VoidCallback? onBack;
+  final VoidCallback? onForward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: SakuColors.blue100,
+      padding: const EdgeInsets.fromLTRB(8, 22, 8, 16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left_rounded,
+                color: SakuColors.blue900, size: 34),
+            onPressed: onBack,
+          ),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SakuColors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right_rounded,
+                color: SakuColors.blue900, size: 34),
+            onPressed: onForward,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Period toggle ──
+
+class _PeriodToggle extends StatelessWidget {
+  const _PeriodToggle({required this.value, required this.onChanged});
+
+  final _PeriodType value;
+  final ValueChanged<_PeriodType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _ToggleChip(
+          label: 'Harian',
+          selected: value == _PeriodType.daily,
+          onTap: () => onChanged(_PeriodType.daily),
+        ),
+        const SizedBox(width: 8),
+        _ToggleChip(
+          label: 'Mingguan',
+          selected: value == _PeriodType.weekly,
+          onTap: () => onChanged(_PeriodType.weekly),
+        ),
+        const SizedBox(width: 8),
+        _ToggleChip(
+          label: 'Bulanan',
+          selected: value == _PeriodType.monthly,
+          onTap: () => onChanged(_PeriodType.monthly),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToggleChip extends StatelessWidget {
+  const _ToggleChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? SakuColors.blue900 : SakuColors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: selected ? SakuColors.blue900 : SakuColors.neutral300,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? SakuColors.white : SakuColors.neutral600,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Total pengeluaran card ──
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.total});
+
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: SakuColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: SakuColors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.trending_down_rounded,
+              color: SakuColors.danger, size: 28),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Total Pengeluaran',
+              style: TextStyle(
+                fontSize: 16,
+                color: SakuColors.black,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Text(
+            'Rp ${formatPlain(total)}',
+            style: const TextStyle(
+              fontSize: 18,
+              color: SakuColors.danger,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Donut per kategori ──
+
+class _CategoryDonut extends StatelessWidget {
+  const _CategoryDonut({required this.filtered});
+
+  final List<DashboardTransaction> filtered;
 
   static const _palette = [
     Color(0xFFFF355D),
@@ -18,8 +347,9 @@ class ChartDashboard extends StatelessWidget {
 
   List<_ChartCategory> get _categories {
     final grouped = <String, int>{};
-    for (final item in transactions.where((item) => item.amountValue < 0)) {
-      grouped[item.title] = (grouped[item.title] ?? 0) + item.amountValue.abs();
+    for (final item in filtered) {
+      grouped[item.title] =
+          (grouped[item.title] ?? 0) + item.amountValue.abs();
     }
     if (grouped.isEmpty) {
       return const [
@@ -50,170 +380,8 @@ class ChartDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = _categories;
-    final totalExpense = transactions
-        .where((item) => item.amountValue < 0)
-        .fold<int>(0, (sum, item) => sum + item.amountValue.abs());
-    final totalIncome = transactions
-        .where((item) => item.amountValue > 0)
-        .fold<int>(0, (sum, item) => sum + item.amountValue);
+    final total = categories.fold<int>(0, (s, e) => s + e.amountValue);
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
-      children: [
-        const _MonthTopBar(),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: _PeriodFilter(
-            onChanged: (value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Periode $value dipilih')),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: _ChartSection(
-            title: 'Pengeluaran',
-            total: formatPlain(totalExpense),
-            categories: categories,
-            accent: SakuColors.danger,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: _CompactIncomeCard(totalIncome: totalIncome),
-        ),
-      ],
-    );
-  }
-}
-
-class _MonthTopBar extends StatelessWidget {
-  const _MonthTopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: SakuColors.blue100,
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
-      child: const Row(
-        children: [
-          Icon(Icons.chevron_left_rounded, color: SakuColors.blue900, size: 34),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  'April',
-                  style: TextStyle(
-                    color: SakuColors.black,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  '2026',
-                  style: TextStyle(
-                    color: SakuColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right_rounded,
-              color: SakuColors.blue900, size: 34),
-        ],
-      ),
-    );
-  }
-}
-
-class _PeriodFilter extends StatelessWidget {
-  const _PeriodFilter({required this.onChanged});
-
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        showModalBottomSheet<void>(
-          context: context,
-          backgroundColor: SakuColors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          builder: (context) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Pilih Periode',
-                    style: TextStyle(
-                      color: SakuColors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final item in ['Mingguan', 'Bulanan', 'Tahunan'])
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(item),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        onChanged(item);
-                      },
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: SakuColors.neutral600,
-        side: const BorderSide(color: SakuColors.neutral300),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Pilih Periode'),
-          SizedBox(width: 24),
-          Icon(Icons.keyboard_arrow_down_rounded, color: SakuColors.black),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChartSection extends StatelessWidget {
-  const _ChartSection({
-    required this.title,
-    required this.total,
-    required this.categories,
-    required this.accent,
-  });
-
-  final String title;
-  final String total;
-  final List<_ChartCategory> categories;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
       decoration: cardDecoration(radius: 10),
       clipBehavior: Clip.antiAlias,
@@ -223,12 +391,13 @@ class _ChartSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 16, 14, 10),
             child: Row(
               children: [
-                Icon(Icons.paid_outlined, color: accent, size: 28),
+                const Icon(Icons.pie_chart_outline_rounded,
+                    color: SakuColors.black, size: 28),
                 const SizedBox(width: 8),
-                Expanded(
+                const Expanded(
                   child: Text(
-                    title,
-                    style: const TextStyle(
+                    'Pengeluaran',
+                    style: TextStyle(
                       color: SakuColors.black,
                       fontSize: 23,
                       fontWeight: FontWeight.w900,
@@ -263,7 +432,7 @@ class _ChartSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        total,
+                        formatPlain(total),
                         style: const TextStyle(
                           color: SakuColors.black,
                           fontSize: 18,
@@ -276,59 +445,56 @@ class _ChartSection extends StatelessWidget {
               ),
             ),
           ),
-          ...categories.take(4).map((category) => _CategoryRow(category)),
-          Material(
-            color: SakuColors.neutral100,
-            child: InkWell(
-              onTap: () {
-                showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: SakuColors.white,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(28)),
-                  ),
-                  builder: (context) => _ChartCategorySheet(
-                    title: title,
-                    categories: categories,
-                  ),
-                );
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Lihat Lainnya',
-                      style: TextStyle(
-                        color: SakuColors.neutral600,
-                        fontWeight: FontWeight.w700,
+          ...categories.take(4).map((cat) => _CategoryRow(cat)),
+          if (categories.length > 4)
+            Material(
+              color: SakuColors.neutral100,
+              child: InkWell(
+                onTap: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    backgroundColor: SakuColors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(28)),
+                    ),
+                    builder: (context) => _CategorySheet(
+                      categories: categories,
+                    ),
+                  );
+                },
+                child: const Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Lihat Lainnya',
+                        style: TextStyle(
+                          color: SakuColors.neutral600,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: SakuColors.neutral600,
-                    ),
-                  ],
+                      SizedBox(width: 10),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: SakuColors.neutral600,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _ChartCategorySheet extends StatelessWidget {
-  const _ChartCategorySheet({
-    required this.title,
-    required this.categories,
-  });
+class _CategorySheet extends StatelessWidget {
+  const _CategorySheet({required this.categories});
 
-  final String title;
   final List<_ChartCategory> categories;
 
   @override
@@ -340,69 +506,31 @@ class _ChartCategorySheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Semua Kategori $title',
-              style: const TextStyle(
+            const Text(
+              'Semua Kategori',
+              style: TextStyle(
                 color: SakuColors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
             ),
             const SizedBox(height: 12),
-            for (final category in categories)
+            for (final cat in categories)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: category.color,
-                  child: Icon(category.icon, color: SakuColors.black),
+                  backgroundColor: cat.color,
+                  child: Icon(cat.icon, color: SakuColors.black),
                 ),
-                title: Text(category.title),
-                subtitle: Text('Rp ${formatPlain(category.amountValue)}'),
+                title: Text(cat.title),
+                subtitle: Text('Rp ${formatPlain(cat.amountValue)}'),
                 trailing: Text(
-                  '${category.percent}%',
+                  '${cat.percent}%',
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CompactIncomeCard extends StatelessWidget {
-  const _CompactIncomeCard({required this.totalIncome});
-
-  final int totalIncome;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: cardDecoration(radius: 10),
-      child: Row(
-        children: [
-          const Icon(Icons.paid_outlined, color: SakuColors.success, size: 28),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'Pemasukan',
-              style: TextStyle(
-                color: SakuColors.black,
-                fontSize: 23,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          Text(
-            formatPlain(totalIncome),
-            style: const TextStyle(
-              color: SakuColors.success,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
       ),
     );
   }

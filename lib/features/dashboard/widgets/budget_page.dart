@@ -1,16 +1,17 @@
-import 'package:flutter/material.dart';
 import 'dashboard_shared.dart';
-import 'category_picker_component.dart'; // Pastikan mengarah ke file komponen picker baru
+import 'add_note_page.dart';
 
 class BudgetDashboard extends StatelessWidget {
   const BudgetDashboard({
     super.key,
     required this.budgets,
     required this.onBack,
+    required this.onDelete,
   });
 
   final List<DashboardBudget> budgets;
   final VoidCallback onBack;
+  final ValueChanged<DashboardBudget> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +57,7 @@ class BudgetDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 26),
               const Text(
-                'Kategori Budget', // Koreksi typo dari 'Katagori'
+                'Katagori budget',
                 style: TextStyle(
                   color: SakuColors.black,
                   fontSize: 18,
@@ -64,7 +65,7 @@ class BudgetDashboard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              ...budgets.map(_BudgetRow.new),
+              ...budgets.map((b) => _BudgetRow(b, onDelete: onDelete)),
             ],
           ),
         ),
@@ -74,9 +75,10 @@ class BudgetDashboard extends StatelessWidget {
 }
 
 class _BudgetRow extends StatelessWidget {
-  const _BudgetRow(this.item);
+  const _BudgetRow(this.item, {required this.onDelete});
 
   final DashboardBudget item;
+  final ValueChanged<DashboardBudget> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +124,15 @@ class _BudgetRow extends StatelessWidget {
                         color: SakuColors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => onDelete(item),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: SakuColors.danger,
+                        size: 20,
                       ),
                     ),
                   ],
@@ -179,17 +190,22 @@ class BudgetFormDialogState extends State<BudgetFormDialog> {
     super.dispose();
   }
 
-  // INTEGRASI BARU: Memanggil picker bottom sheet secara statis & asinkronus
-  void _pickCategory() async {
-    final selected = await CategoryPickerComponent.showAsBottomSheet(
+  void _pickCategory() {
+    showModalBottomSheet<void>(
       context: context,
-      selectedCategory: _category,
-      kind: CategoryKind.expense, // Budget biasanya berbasis pos pengeluaran
+      backgroundColor: SakuColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => CategoryPickerSheet(
+        selectedCategory: _category,
+        kind: CategoryKind.expense,
+        onSelected: (category) {
+          setState(() => _category = category);
+          Navigator.of(context).pop();
+        },
+      ),
     );
-
-    if (selected != null && mounted) {
-      setState(() => _category = selected);
-    }
   }
 
   void _save() {
@@ -239,7 +255,7 @@ class BudgetFormDialogState extends State<BudgetFormDialog> {
                 const Expanded(
                   child: DialogSelectField(
                     label: 'Dompet',
-                    value: 'BSI',
+                    value: 'Dompet',
                     icon: Icons.credit_card_rounded,
                     trailing: Icons.keyboard_arrow_down_rounded,
                   ),

@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.5.5
   freezed_annotation: ^2.4.1
   sqflite: ^2.4.2+1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -27,12 +28,13 @@ dev_dependencies:
 
   build_runner: 2.5.4
   freezed: ^2.4.0      
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/logo.png
+    - assets/logoo.png
     - assets/asset onboarding 1.png
     - assets/asset onboarding 2.png
     - assets/background beranda biru.png
@@ -40,3 +42,10 @@ flutter:
     - assets/bg-ilst11.png
     - assets/splashscreen-animation.png
     - assets/icons/
+    - assets/splash_animation.gif
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logoo.png"
+  min_sdk_android: 21 # isi sesuai min_sdk di android/app/build.gradle kamu

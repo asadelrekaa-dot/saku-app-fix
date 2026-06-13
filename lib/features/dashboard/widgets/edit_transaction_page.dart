@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'add_note_page.dart';
+import '../../../core/api/laravel_api_service.dart';
+
 import 'dashboard_shared.dart';
-import 'category_picker_component.dart';
+import 'add_note_page.dart';
 
 class EditTransactionDashboard extends StatefulWidget {
   const EditTransactionDashboard({
@@ -26,6 +26,16 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
   late final TextEditingController _noteController;
   late final TextEditingController _amountController;
   late String _category;
+  int? _selectedWalletId;
+  String _selectedWalletName = 'Dompet';
+  List<WalletItem> _wallets = [];
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+
+  static const _months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
 
   DashboardTransaction? get _item => widget.item;
   bool get _isLoan => _item?.title == 'Beri Pinjaman';
@@ -33,10 +43,41 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
   bool get _isDaily => !_isLoan && !_isDebt;
   bool get _isIncome => (_item?.amountValue ?? 0) > 0 && _isDaily;
 
+  String get _dateText {
+    return '${_selectedDate.day} ${_months[_selectedDate.month - 1]} ${_selectedDate.year}';
+  }
+
+  String get _timeText {
+    return '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  DateTime? _parseDateFromItem(String dateStr) {
+    try {
+      final parts = dateStr.split(' ');
+      if (parts.length < 3) return null;
+      final day = int.tryParse(parts[0]);
+      final monthIdx = _months.indexOf(parts[1]);
+      final year = int.tryParse(parts[2]);
+      if (day == null || monthIdx < 0 || year == null) return null;
+      return DateTime(year, monthIdx + 1, day);
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     final item = _item;
+    final now = DateTime.now();
+    _selectedDate = item != null ? (_parseDateFromItem(item.date) ?? now) : now;
+    _selectedTime = item != null
+        ? TimeOfDay(
+            hour: int.tryParse(item.time.split(':').firstOrNull ?? '') ?? now.hour,
+            minute: int.tryParse(item.time.split(':').lastOrNull ?? '') ?? now.minute,
+          )
+        : TimeOfDay.fromDateTime(now);
+
     final person = item == null
         ? ''
         : item.note
@@ -49,6 +90,37 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
     _amountController = TextEditingController(
       text: item == null ? '' : formatPlain(item.amountValue.abs()),
     );
+    _fetchWallets();
+  }
+
+  Future<void> _fetchWallets() async {
+    final wallets = await LaravelApiService.instance.getWallets();
+    if (!mounted) return;
+    setState(() {
+      _wallets = wallets;
+      if (wallets.isNotEmpty) {
+        _selectedWalletId = wallets.first.id;
+        _selectedWalletName = wallets.first.name;
+      }
+    });
+  }
+
+  Future<void> _openWalletPicker() async {
+    await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => WalletPickerSheet(
+        wallets: _wallets,
+        selectedId: _selectedWalletId,
+        onSelected: (id, name) {
+          Navigator.of(context).pop();
+          setState(() {
+            _selectedWalletId = id;
+            _selectedWalletName = name;
+          });
+          LaravelApiService.instance.cacheWalletId(id);
+        },
+      ),
+    );
   }
 
   @override
@@ -59,17 +131,45 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
     super.dispose();
   }
 
-  // BAGIAN YANG DIUBAH: Menghubungkan ke sistem bottom sheet baru secara asinkronus
-  Future<void> _openCategoryPicker() async {
-    final selected = await CategoryPickerComponent.showAsBottomSheet(
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
       context: context,
-      selectedCategory: _category,
-      kind: _isIncome ? CategoryKind.income : CategoryKind.expense,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pilih Tanggal',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
     );
-
-    if (selected != null && mounted) {
-      setState(() => _category = selected);
+    if (picked != null && mounted) {
+      setState(() => _selectedDate = picked);
     }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      helpText: 'Pilih Waktu',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null && mounted) {
+      setState(() => _selectedTime = picked);
+    }
+  }
+
+  Future<void> _openCategoryPicker() async {
+    final category = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => CategorySelectionPage(
+          selectedCategory: _category,
+          kind: _isIncome ? CategoryKind.income : CategoryKind.expense,
+        ),
+      ),
+    );
+    if (category == null) return;
+    setState(() => _category = category);
   }
 
   void _save() {
@@ -82,6 +182,11 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
       );
       return;
     }
+
+    final rawDate = DateTime(
+      _selectedDate.year, _selectedDate.month, _selectedDate.day,
+      _selectedTime.hour, _selectedTime.minute,
+    ).toIso8601String();
 
     final name = _nameController.text.trim();
     final note = _noteController.text.trim();
@@ -97,13 +202,15 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
                 ? 'Catatan $title'
                 : '${_isLoan ? 'Pinjaman ke' : 'Hutang ke'} ${name.isEmpty ? 'Nama' : name}',
         amountValue: isMoneyOut ? -amount : amount,
+        date: _dateText,
+        time: _timeText,
+        rawDate: rawDate,
         icon: categoryIcon(title),
         color: isMoneyOut ? SakuColors.danger : SakuColors.success,
       ),
     );
   }
 
-  // BAGIAN UI (TIDAK ADA PERUBAHAN SAMA SEKALI)
   @override
   Widget build(BuildContext context) {
     final item = _item;
@@ -125,6 +232,26 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(32, 22, 32, 22),
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _EditTappablePillField(
+                      text: _dateText,
+                      icon: Icons.calendar_month_rounded,
+                      onTap: _pickDate,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: _EditTappablePillField(
+                      text: _timeText,
+                      icon: Icons.access_time_filled_rounded,
+                      onTap: _pickTime,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
               if (_isDaily)
                 SelectablePillField(
                   label: 'Kategori',
@@ -167,9 +294,12 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
                 ),
               ),
               const SizedBox(height: 20),
-              const SizedBox(
+              SizedBox(
                 width: 164,
-                child: WalletPicker(),
+                child: WalletPicker(
+                  walletName: _selectedWalletName,
+                  onTap: _openWalletPicker,
+                ),
               ),
             ],
           ),
@@ -219,6 +349,55 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _EditTappablePillField extends StatelessWidget {
+  const _EditTappablePillField({
+    required this.text,
+    this.icon,
+    required this.onTap,
+  });
+
+  final String text;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: SakuColors.white,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: SakuColors.neutral300),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SakuColors.neutral700,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (icon != null) Icon(icon, color: SakuColors.neutral300),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
