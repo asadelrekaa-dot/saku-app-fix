@@ -1,4 +1,5 @@
 import '../../../core/api/laravel_api_service.dart';
+import '../../../core/utils/expression_calculator.dart';
 
 import 'dashboard_shared.dart';
 
@@ -24,6 +25,9 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
   final _nameController = TextEditingController(text: 'Nama');
   final _noteController = TextEditingController();
   String _amount = '0';
+  String _expression = '';
+  bool _isNewEntry = true;
+  bool _showCalculator = false;
   String _expenseCategory = 'Makanan';
   String _incomeCategory = 'Gaji';
   int? _selectedWalletId;
@@ -158,12 +162,34 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
     setState(() {
       if (key == 'C') {
         _amount = '0';
+        _expression = '';
+        _isNewEntry = true;
       } else if (key == 'back') {
-        _amount = _amount.length <= 1
-            ? '0'
-            : _amount.substring(0, _amount.length - 1);
+        if (_amount.length <= 1) {
+          _amount = '0';
+        } else {
+          _amount = _amount.substring(0, _amount.length - 1);
+        }
+      } else if (key == '+' || key == '-' || key == 'x') {
+        if (_amount != '0') {
+          _expression = '$_expression$_amount $key ';
+          _amount = '0';
+          _isNewEntry = true;
+        }
+      } else if (key == '=') {
+        if (_expression.isNotEmpty && _amount != '0') {
+          final expr = '$_expression$_amount';
+          _amount = ExpressionCalculator.evaluate(expr);
+          _expression = '';
+          _isNewEntry = true;
+        }
       } else if (RegExp(r'^\d+$').hasMatch(key)) {
-        _amount = _amount == '0' ? key : '$_amount$key';
+        if (_isNewEntry) {
+          _amount = key;
+          _isNewEntry = false;
+        } else {
+          _amount = _amount == '0' ? key : '$_amount$key';
+        }
       }
     });
   }
@@ -346,15 +372,46 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
             ],
           ),
         ),
-        Container(
-          color: SakuColors.blue50,
-          padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
-          child: Column(
-            children: [
-              _AmountDisplay(amount: _amount),
-              const SizedBox(height: 6),
-              _CalculatorPad(onTap: _handleKeypadTap),
-            ],
+        GestureDetector(
+          onTap: () => setState(() => _showCalculator = !_showCalculator),
+          child: Container(
+            color: _showCalculator ? SakuColors.blue50 : SakuColors.white,
+            padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
+            child: Column(
+              children: [
+                if (_expression.isNotEmpty)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        _expression.trim(),
+                        style: const TextStyle(
+                          color: SakuColors.neutral600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AmountDisplay(amount: _amount),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      _showCalculator ? Icons.keyboard_arrow_down : Icons.calculate,
+                      color: SakuColors.neutral600,
+                    ),
+                  ],
+                ),
+                if (_showCalculator) ...[
+                  const SizedBox(height: 6),
+                  _CalculatorPad(onTap: _handleKeypadTap),
+                ],
+              ],
+            ),
           ),
         ),
       ],

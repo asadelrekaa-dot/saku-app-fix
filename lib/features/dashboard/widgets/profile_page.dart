@@ -82,11 +82,10 @@ class ProfileDashboardState extends State<ProfileDashboard> {
       // keep local values
     }
     try {
-      final wallets = await LaravelApiService.instance.getWallets();
-      if (mounted) {
+      final wallets = await _repo.loadWallets();
+      if (mounted && wallets.isNotEmpty) {
         setState(() => _wallets = wallets);
       }
-      await _repo.replaceAllWallets(wallets);
     } catch (_) {
       // keep local wallets
     }
@@ -103,6 +102,44 @@ class ProfileDashboardState extends State<ProfileDashboard> {
           Navigator.of(ctx).pop();
           setState(() => _wallets.add(wallet));
           _syncWalletToApi(wallet, isPrimary: isPrimary);
+        },
+      ),
+    );
+  }
+
+  void _editWallet(WalletItem item) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => _WalletFormDialog(
+        existing: item,
+        onSave: (updated, isPrimary) async {
+          Navigator.of(ctx).pop();
+          try {
+            final result = await LaravelApiService.instance.updateWallet(
+              id: updated.id!,
+              name: updated.name,
+              isPrimary: isPrimary,
+            );
+            if (!mounted) return;
+            setState(() {
+              final index = _wallets.indexWhere((w) => w.id == item.id);
+              if (index != -1) {
+                _wallets[index] = WalletItem(
+                  id: result.id,
+                  name: result.name,
+                  balance: item.balance,
+                );
+              }
+            });
+            await _repo.replaceAllWallets(_wallets);
+          } catch (_) {
+            if (!mounted) return;
+            setState(() {
+              final index = _wallets.indexWhere((w) => w.id == item.id);
+              if (index != -1) _wallets[index] = updated;
+            });
+            await _repo.replaceAllWallets(_wallets);
+          }
         },
       ),
     );
@@ -257,6 +294,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
       builder: (context) => _WalletDetailDialog(
         item: item,
         onDelete: item.id != null ? () => _deleteWallet(item) : null,
+        onEdit: item.id != null ? () => _editWallet(item) : null,
       ),
     );
   }
@@ -814,10 +852,11 @@ class _WalletCard extends StatelessWidget {
 }
 
 class _WalletDetailDialog extends StatelessWidget {
-  const _WalletDetailDialog({required this.item, this.onDelete});
+  const _WalletDetailDialog({required this.item, this.onDelete, this.onEdit});
 
   final WalletItem item;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -833,7 +872,7 @@ class _WalletDetailDialog extends StatelessWidget {
             const CircleAvatar(
               radius: 28,
               backgroundColor: SakuColors.blue300,
-              child: Icon(Icons.credit_card_rounded, color: SakuColors.white),
+              child: Icon(Icons.account_balance_wallet_rounded, color: SakuColors.white),
             ),
             const SizedBox(height: 12),
             Text(
@@ -846,54 +885,114 @@ class _WalletDetailDialog extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Saldo Rp ${formatPlain(item.balance)}',
+              'Rp ${formatPlain(item.balance)}',
               style: const TextStyle(
                 color: SakuColors.neutral600,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Dompet terhubung dengan server. Edit nama, arsip, dan riwayat transaksi dapat dikelola dari sini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: SakuColors.neutral600,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
             Row(
               children: [
-                if (onDelete != null) ...[
+                if (onEdit != null) ...[
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
+                    child: _DialogActionButton(
+                      label: 'Edit',
+                      icon: Icons.edit_rounded,
+                      color: SakuColors.blue700,
+                      bgColor: SakuColors.blue50,
+                      onTap: () {
                         Navigator.of(context).pop();
-                        onDelete?.call();
+                        onEdit?.call();
                       },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                      ),
-                      child: const Text('Hapus'),
                     ),
                   ),
                   const SizedBox(width: 12),
                 ],
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: SakuColors.blue300,
-                      foregroundColor: SakuColors.white,
+                if (onDelete != null) ...[
+                  Expanded(
+                    child: _DialogActionButton(
+                      label: 'Hapus',
+                      icon: Icons.delete_outline_rounded,
+                      color: Colors.red,
+                      bgColor: Colors.red.shade50,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onDelete?.call();
+                      },
                     ),
-                    child: const Text('Tutup'),
                   ),
-                ),
+                ],
               ],
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: SakuColors.neutral600,
+                  side: const BorderSide(color: SakuColors.neutral300),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text('Tutup',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogActionButton extends StatelessWidget {
+  const _DialogActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1015,9 +1114,10 @@ class _ProfileMenuTile extends StatelessWidget {
 }
 
 class _WalletFormDialog extends StatefulWidget {
-  const _WalletFormDialog({required this.onSave});
+  const _WalletFormDialog({required this.onSave, this.existing});
 
   final void Function(WalletItem wallet, bool isPrimary) onSave;
+  final WalletItem? existing;
 
   @override
   State<_WalletFormDialog> createState() => _WalletFormDialogState();
@@ -1027,6 +1127,15 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
   final _nameController = TextEditingController();
   final _balanceController = TextEditingController();
   bool _isPrimary = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existing != null) {
+      _nameController.text = widget.existing!.name;
+      _balanceController.text = widget.existing!.balance.toString();
+    }
+  }
 
   @override
   void dispose() {
@@ -1044,7 +1153,10 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
       );
       return;
     }
-    widget.onSave(WalletItem(name: name, balance: balance), _isPrimary);
+    final wallet = widget.existing != null
+        ? WalletItem(id: widget.existing!.id, name: name, balance: balance)
+        : WalletItem(name: name, balance: balance);
+    widget.onSave(wallet, _isPrimary);
   }
 
   @override
@@ -1068,9 +1180,9 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Buat Dompet baru',
-                style: TextStyle(
+              Text(
+                widget.existing != null ? 'Edit Dompet' : 'Buat Dompet baru',
+                style: const TextStyle(
                   color: SakuColors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -1119,14 +1231,15 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
                   ),
                 ],
               ),
-              _WalletDialogField(
-                label: 'Saldo Awal',
-                child: TextField(
-                  controller: _balanceController,
-                  keyboardType: TextInputType.number,
-                  decoration: _walletInputDecoration('Masukkan saldo awal..'),
+              if (widget.existing == null)
+                _WalletDialogField(
+                  label: 'Saldo Awal',
+                  child: TextField(
+                    controller: _balanceController,
+                    keyboardType: TextInputType.number,
+                    decoration: _walletInputDecoration('Masukkan saldo awal..'),
+                  ),
                 ),
-              ),
               const SizedBox(height: 12),
               InkWell(
                 borderRadius: BorderRadius.circular(12),

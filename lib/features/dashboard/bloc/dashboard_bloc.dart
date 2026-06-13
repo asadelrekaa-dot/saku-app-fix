@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -66,7 +68,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         );
       }
       await _repo.replaceAllWallets(updated);
-    } catch (_) {}
+    } catch (e) {
+      log('[DashboardBloc] Failed to adjust wallet balance', error: e);
+    }
   }
 
   Future<void> _onStarted(
@@ -96,8 +100,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final transactions = list.map(_parseTransaction).toList();
       await _repo.replaceAllTransactions(transactions);
       emit(state.copyWith(transactions: transactions));
-    } catch (_) {
-      // Local-first: keep local state when API is unreachable.
+    } catch (e) {
+      log('[DashboardBloc] Failed to fetch transactions, using local data', error: e);
     }
   }
 
@@ -107,8 +111,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final budgets = list.map(_parseBudgetItem).toList();
       await _repo.replaceAllBudgets(budgets);
       emit(state.copyWith(budgets: budgets));
-    } catch (_) {
-      // Local-first: keep local state when API is unreachable.
+    } catch (e) {
+      log('[DashboardBloc] Failed to fetch budgets, using local data', error: e);
     }
   }
 
@@ -261,7 +265,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         transactions: [saved, ...state.transactions.sublist(1)],
       ));
       await _repo.addTransaction(saved);
-    } catch (_) {
+    } catch (e) {
+      log('[DashboardBloc] Failed to sync transaction to API', error: e);
       await _repo.addTransaction(event.item);
     }
     await _adjustWalletBalance(event.item.amountValue);
@@ -298,7 +303,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         await _repo.addBudget(saved);
         return;
       }
-    } catch (_) {
+    } catch (e) {
+      log('[DashboardBloc] Failed to sync budget to API', error: e);
     }
     await _repo.addBudget(item);
   }
@@ -317,7 +323,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     if (apiId != null) {
       try {
         await LaravelApiService.instance.deleteBudget(apiId: apiId);
-      } catch (_) {
+      } catch (e) {
+        log('[DashboardBloc] Failed to delete remote budget', error: e);
     }
     }
   }
@@ -343,7 +350,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         apiId: event.item.apiId,
         apiType: event.item.apiType,
       );
-    } catch (_) {} // ignore: empty_catches
+    } catch (e) {
+      log('[DashboardBloc] Failed to delete remote transaction', error: e);
+    }
   }
 
   Future<void> _onTransactionSettled(
@@ -362,7 +371,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         apiId: event.item.apiId,
         apiType: event.item.apiType,
       );
-    } catch (_) {
+    } catch (e) {
+      log('[DashboardBloc] Failed to mark remote settled', error: e);
     }
   }
 
@@ -411,7 +421,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           deadline: event.newItem.deadline,
         ),
       );
-    } catch (_) {
+    } catch (e) {
+      log('[DashboardBloc] Failed to update remote transaction', error: e);
     }
   }
 
@@ -454,7 +465,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           _notifiedSpendingKeys.remove(spendingKey);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      log('[DashboardBloc] Failed to check notifications', error: e);
+    }
   }
 
   Future<void> _checkNotifications() async {

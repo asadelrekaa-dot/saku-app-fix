@@ -33,6 +33,7 @@ class DashboardBudget {
     required this.progress,
     required this.icon,
     this.apiId,
+    this.walletId,
   });
 
   final String title;
@@ -41,6 +42,7 @@ class DashboardBudget {
   final double progress;
   final IconData icon;
   final int? apiId;
+  final int? walletId;
 
   DashboardBudget copyWith({
     String? title,
@@ -49,6 +51,7 @@ class DashboardBudget {
     double? progress,
     IconData? icon,
     Object? apiId = _noValue,
+    Object? walletId = _noValue,
   }) {
     return DashboardBudget(
       title: title ?? this.title,
@@ -57,6 +60,7 @@ class DashboardBudget {
       progress: progress ?? this.progress,
       icon: icon ?? this.icon,
       apiId: apiId == _noValue ? this.apiId : apiId as int?,
+      walletId: walletId == _noValue ? this.walletId : walletId as int?,
     );
   }
 }

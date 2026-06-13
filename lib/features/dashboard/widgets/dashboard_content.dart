@@ -87,7 +87,8 @@ class DashboardContent extends StatelessWidget {
                   userName: userName,
                   photoUrl: photoUrl,
                   transactions: state.transactions,
-                 onOpenHistory: () => bloc.add(const DashboardTabSelected(1)),
+                  budgets: state.budgets,
+                  onOpenHistory: () => bloc.add(const DashboardTabSelected(1)),
                  onOpenBudget: () => bloc
                      .add(const DashboardSurfaceShown(DashboardSurface.budget)),
                  onOpenInsight: () => bloc.add(

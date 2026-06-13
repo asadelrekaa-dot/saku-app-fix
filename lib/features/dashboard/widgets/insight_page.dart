@@ -1,9 +1,19 @@
+import 'dart:async';
 import 'dashboard_shared.dart';
+import '../../../core/api/laravel_api_service.dart';
+import '../../../core/repository/local_repository.dart';
 
 class InsightDashboard extends StatefulWidget {
-  const InsightDashboard({super.key, required this.onBack});
+  const InsightDashboard({
+    super.key,
+    required this.onBack,
+    this.transactions = const [],
+    this.budgets = const [],
+  });
 
   final VoidCallback onBack;
+  final List<DashboardTransaction> transactions;
+  final List<DashboardBudget> budgets;
 
   @override
   State<InsightDashboard> createState() => InsightDashboardState();
@@ -11,14 +21,15 @@ class InsightDashboard extends StatefulWidget {
 
 class InsightDashboardState extends State<InsightDashboard> {
   final _scrollController = ScrollController();
-  final List<ChatMessage> _messages = const [
-    ChatMessage(
+  final List<ChatMessage> _messages = [
+    const ChatMessage(
       text:
           'Halo, aku Saku AI. Aku bisa bantu baca pola catatan, kasih tips hemat, dan bikin arahan budgeting sederhana.',
       fromUser: false,
       time: '1:27',
     ),
-  ].toList();
+  ];
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,7 +37,44 @@ class InsightDashboardState extends State<InsightDashboard> {
     super.dispose();
   }
 
-  void _sendMessage(String text) {
+  Future<Map<String, dynamic>> _buildContext() async {
+    final now = DateTime.now();
+    final thisMonth = widget.transactions.where((t) {
+      final d = DateTime.tryParse(t.rawDate ?? '');
+      return d != null && d.month == now.month && d.year == now.year;
+    }).toList();
+
+    final totalIncome =
+        thisMonth.where((t) => t.amountValue > 0).fold<int>(0, (s, t) => s + t.amountValue);
+    final totalExpense =
+        thisMonth.where((t) => t.amountValue < 0).fold<int>(0, (s, t) => s + t.amountValue.abs());
+
+    final repo = LocalRepository();
+    final wallets = await repo.loadWallets();
+
+    return {
+      'totalIncome': totalIncome,
+      'totalExpense': totalExpense,
+      'wallets': wallets
+          .map((w) => {'name': w.name, 'balance': w.balance})
+          .toList(),
+      'budgets': widget.budgets
+          .map((b) => {
+                'title': b.title,
+                'remaining': b.amountValue - (b.amountValue * b.progress).round(),
+              })
+          .toList(),
+      'recentTransactions': widget.transactions.take(15).map((t) {
+        return {
+          'title': t.title,
+          'amount': t.amountValue,
+          'date': t.rawDate?.substring(0, 10) ?? '',
+        };
+      }).toList(),
+    };
+  }
+
+  Future<void> _sendMessage(String text) async {
     final message = text.trim();
     if (message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -38,14 +86,53 @@ class InsightDashboardState extends State<InsightDashboard> {
     setState(() {
       _messages
           .add(ChatMessage(text: message, fromUser: true, time: 'Sekarang'));
-      _messages.add(
-        ChatMessage(
-          text: _buildReply(message),
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    try {
+      final history = _messages
+          .where((m) => m != _messages.last)
+          .map((m) => {
+                'role': m.fromUser ? 'user' : 'assistant',
+                'content': m.text,
+              })
+          .toList();
+
+      final ctx = await _buildContext();
+      final reply = await LaravelApiService.instance.chatWithAi(
+        message: message,
+        history: history,
+        context: ctx,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage(text: reply, fromUser: false, time: 'Sekarang'));
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final errorText = e.toString().contains('AI tidak dikonfigurasi')
+          ? 'Maaf, AI belum dikonfigurasi. Minta admin isi API Key Groq dulu ya.'
+          : e.toString().contains('Kuota AI habis')
+              ? 'Kuota AI gratis habis. Tunggu beberapa saat atau minta admin isi API Key baru.'
+              : e.toString().contains('Gagal menghubungi AI')
+                  ? 'AI lagi error. Coba beberapa saat lagi.'
+                  : 'Maaf, gagal terhubung ke server. Periksa koneksi internet dan coba lagi.';
+      setState(() {
+        _messages.add(ChatMessage(
+          text: errorText,
           fromUser: false,
           time: 'Sekarang',
-        ),
-      );
-    });
+        ));
+        _isLoading = false;
+      });
+    }
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
@@ -54,42 +141,6 @@ class InsightDashboardState extends State<InsightDashboard> {
         curve: Curves.easeOut,
       );
     });
-  }
-
-  String _buildReply(String message) {
-    final lower = message.toLowerCase();
-    if (_containsAny(lower, const ['budget', 'batas', 'limit'])) {
-      return 'Buka menu Budgeting, isi nominal, pilih kategori, lalu simpan. Budget akan tampil sebagai daftar limit agar kamu tahu sisa ruang belanja.';
-    }
-    if (_containsAny(lower, const ['grafik', 'laporan', 'kategori'])) {
-      return 'Di tab Grafik, kamu bisa melihat ringkasan pengeluaran per kategori. Cocok buat menjawab kategori mana yang paling sering menghabiskan saldo.';
-    }
-    if (_containsAny(lower, const ['widget', 'homescreen', 'home screen'])) {
-      return 'Widget homescreen menampilkan saldo, pengeluaran, dan catatan terbaru. Di Android, tambah dari Profil > Widget Homescreen atau dari daftar widget launcher.';
-    }
-    if (_containsAny(lower, const ['dompet', 'rekening', 'wallet'])) {
-      return 'Dompet dipakai untuk memisahkan sumber uang. Kamu bisa tambah dompet baru dari halaman Profil.';
-    }
-    if (_containsAny(lower, const ['hutang', 'pinjaman', 'lunas'])) {
-      return 'Catatan hutang dan pinjaman bisa dibuat dari tombol tambah. Detailnya bisa dibuka dari riwayat, lalu ditandai lunas saat sudah selesai.';
-    }
-    if (_containsAny(lower, const ['export', 'excel', 'pdf', 'unduh'])) {
-      return 'Fitur export laporan sedang dalam pengembangan. Nanti bisa diunduh sebagai PDF atau Excel.';
-    }
-    if (lower.contains('boros') || lower.contains('bulan')) {
-      return 'Coba cek tab Grafik untuk lihat kategori pengeluaran terbesar. Pasang limit mingguan kecil dulu, lalu evaluasi rutin.';
-    }
-    if (lower.contains('hemat') || lower.contains('tips')) {
-      return 'Mulai dari aturan 3 langkah: catat pengeluaran kecil, pisahkan dompet kebutuhan dan jajan, lalu set budget harian. Yang penting konsisten dulu.';
-    }
-    if (lower.contains('catatan') || lower.contains('pembelian')) {
-      return 'Pakai tombol tambah di tengah, pilih kategori, isi nominal, lalu simpan. Ringkasannya ikut masuk ke widget homescreen Android.';
-    }
-    return 'Aku catat pertanyaannya. Tim Saku akan terus meningkatkan kemampuan AI ini.';
-  }
-
-  bool _containsAny(String text, List<String> keywords) {
-    return keywords.any(text.contains);
   }
 
   @override
@@ -113,15 +164,137 @@ class InsightDashboardState extends State<InsightDashboard> {
                       ),
                       const SizedBox(height: 18),
                       ..._messages.map(_ChatBubble.new),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _TypingIndicator(),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                _InsightComposer(onSend: _sendMessage),
+                _InsightComposer(onSend: _sendMessage, isLoading: _isLoading),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: SakuColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
+          bottomLeft: const Radius.circular(4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: SakuColors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Dot(delay: 0),
+            SizedBox(width: 6),
+            _Dot(delay: 200),
+            SizedBox(width: 6),
+            _Dot(delay: 400),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Dot extends StatefulWidget {
+  const _Dot({required this.delay});
+  final int delay;
+
+  @override
+  State<_Dot> createState() => _DotState();
+}
+
+class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      _controller.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) => Opacity(
+        opacity: _animation.value,
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: SakuColors.neutral300,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -278,9 +451,10 @@ class _ChatBubble extends StatelessWidget {
 }
 
 class _InsightComposer extends StatefulWidget {
-  const _InsightComposer({required this.onSend});
+  const _InsightComposer({required this.onSend, required this.isLoading});
 
   final ValueChanged<String> onSend;
+  final bool isLoading;
 
   @override
   State<_InsightComposer> createState() => _InsightComposerState();
@@ -334,6 +508,8 @@ class _InsightComposerState extends State<_InsightComposer> {
                   borderSide: const BorderSide(color: SakuColors.blue300),
                 ),
               ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: widget.isLoading ? null : (_) => _send(),
             ),
           ),
           const SizedBox(width: 18),
@@ -341,13 +517,22 @@ class _InsightComposerState extends State<_InsightComposer> {
             width: 44,
             height: 44,
             child: IconButton.filled(
-              onPressed: _send,
+              onPressed: widget.isLoading ? null : _send,
               style: IconButton.styleFrom(backgroundColor: SakuColors.blue300),
-              icon: const Icon(
-                Icons.send_rounded,
-                color: SakuColors.white,
-                size: 24,
-              ),
+              icon: widget.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: SakuColors.white,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.send_rounded,
+                      color: SakuColors.white,
+                      size: 24,
+                    ),
             ),
           ),
         ],

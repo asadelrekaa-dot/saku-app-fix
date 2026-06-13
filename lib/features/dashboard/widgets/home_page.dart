@@ -13,6 +13,7 @@ class HomeDashboard extends StatefulWidget {
     required this.userName,
     this.photoUrl,
     required this.transactions,
+    required this.budgets,
     required this.onOpenHistory,
     required this.onOpenBudget,
     required this.onOpenInsight,
@@ -22,6 +23,7 @@ class HomeDashboard extends StatefulWidget {
   final String userName;
   final String? photoUrl;
   final List<DashboardTransaction> transactions;
+  final List<DashboardBudget> budgets;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenInsight;
@@ -90,7 +92,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         _HomeBodyPanel(
           transactions: transactions,
+          budgets: widget.budgets,
           onOpenHistory: widget.onOpenHistory,
+          onOpenBudget: widget.onOpenBudget,
           debtTransactions: transactions.where((t) =>
               (t.title == 'Hutang' || t.title == 'Beri Pinjaman') &&
               !t.settled).toList(),
@@ -187,13 +191,17 @@ class _HomeHeroSection extends StatelessWidget {
 class _HomeBodyPanel extends StatelessWidget {
   const _HomeBodyPanel({
     required this.transactions,
+    required this.budgets,
     required this.onOpenHistory,
+    required this.onOpenBudget,
     required this.debtTransactions,
     required this.onMarkSettled,
   });
 
   final List<DashboardTransaction> transactions;
+  final List<DashboardBudget> budgets;
   final VoidCallback onOpenHistory;
+  final VoidCallback onOpenBudget;
   final List<DashboardTransaction> debtTransactions;
   final ValueChanged<DashboardTransaction> onMarkSettled;
 
@@ -209,9 +217,199 @@ class _HomeBodyPanel extends StatelessWidget {
             onOpenMore: onOpenHistory,
           ),
           const SizedBox(height: 20),
+          if (budgets.isNotEmpty) ...[
+            _BudgetRingkasanCard(budgets: budgets, onTap: onOpenBudget),
+            const SizedBox(height: 20),
+          ] else ...[
+            _CreateBudgetCard(onTap: onOpenBudget),
+            const SizedBox(height: 20),
+          ],
           _ActiveDebtCard(
             debtTransactions: debtTransactions,
             onMarkSettled: onMarkSettled,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreateBudgetCard extends StatelessWidget {
+  const _CreateBudgetCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: SakuColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: SakuColors.blue100, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: SakuColors.blue50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add_chart_rounded,
+                  color: SakuColors.blue700, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Buat batas pengeluaran per kategori',
+                style: TextStyle(
+                  color: SakuColors.blue700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: SakuColors.blue300, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BudgetRingkasanCard extends StatelessWidget {
+  const _BudgetRingkasanCard({required this.budgets, this.onTap});
+
+  final List<DashboardBudget> budgets;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: SakuColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: SakuColors.neutral100),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.savings_rounded, color: SakuColors.mango500, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Ringkasan Budget',
+                    style: TextStyle(
+                      color: SakuColors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: SakuColors.neutral300, size: 22),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...budgets.take(3).map((b) => _MiniBudgetRow(b)),
+            if (budgets.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '+${budgets.length - 3} budget lainnya',
+                  style: const TextStyle(
+                    color: SakuColors.neutral300,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniBudgetRow extends StatelessWidget {
+  const _MiniBudgetRow(this.item);
+
+  final DashboardBudget item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(item.icon, size: 18, color: SakuColors.blue700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        color: SakuColors.black,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Rp ${formatPlain(item.amountValue)}',
+                      style: const TextStyle(
+                        color: SakuColors.neutral600,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: item.progress,
+                          minHeight: 8,
+                          color: item.progress >= 0.8
+                              ? SakuColors.danger
+                              : SakuColors.mango500,
+                          backgroundColor: SakuColors.neutral100,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      item.remaining,
+                      style: TextStyle(
+                        color: item.progress >= 0.8
+                            ? SakuColors.danger
+                            : SakuColors.neutral300,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),

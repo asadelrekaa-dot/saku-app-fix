@@ -1,3 +1,5 @@
+import '../../../core/api/laravel_api_service.dart';
+
 import 'dashboard_shared.dart';
 import 'add_note_page.dart';
 
@@ -30,32 +32,7 @@ class BudgetDashboard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'Masukkan Nominal Budget..',
-                  filled: true,
-                  fillColor: SakuColors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 15,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: SakuColors.neutral300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: SakuColors.neutral300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: SakuColors.mango500),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 26),
+              const SizedBox(height: 18),
               const Text(
                 'Katagori budget',
                 style: TextStyle(
@@ -183,11 +160,52 @@ class BudgetFormDialog extends StatefulWidget {
 class BudgetFormDialogState extends State<BudgetFormDialog> {
   final _amountController = TextEditingController();
   String _category = 'Kategori';
+  List<WalletItem> _wallets = [];
+  int? _selectedWalletId;
+  String _selectedWalletName = 'Dompet';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWallets();
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchWallets() async {
+    try {
+      final wallets = await LaravelApiService.instance.getWallets();
+      if (!mounted) return;
+      setState(() {
+        _wallets = wallets;
+        if (wallets.isNotEmpty) {
+          _selectedWalletId = wallets.first.id;
+          _selectedWalletName = wallets.first.name;
+        }
+      });
+    } catch (_) {}
+  }
+
+  void _openWalletPicker() {
+    showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => WalletPickerSheet(
+        wallets: _wallets,
+        selectedId: _selectedWalletId,
+        onSelected: (id, name) {
+          Navigator.of(context).pop();
+          setState(() {
+            _selectedWalletId = id;
+            _selectedWalletName = name;
+          });
+          LaravelApiService.instance.cacheWalletId(id);
+        },
+      ),
+    );
   }
 
   void _pickCategory() {
@@ -222,8 +240,9 @@ class BudgetFormDialogState extends State<BudgetFormDialog> {
         title: _category,
         amountValue: amount,
         remaining: 'sisa 100%',
-        progress: 1,
+        progress: 0,
         icon: categoryIcon(_category),
+        walletId: _selectedWalletId,
       ),
     );
   }
@@ -252,12 +271,13 @@ class BudgetFormDialogState extends State<BudgetFormDialog> {
             const SizedBox(height: 22),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: DialogSelectField(
                     label: 'Dompet',
-                    value: 'Dompet',
+                    value: _selectedWalletName,
                     icon: Icons.credit_card_rounded,
                     trailing: Icons.keyboard_arrow_down_rounded,
+                    onTap: _openWalletPicker,
                   ),
                 ),
                 const SizedBox(width: 24),

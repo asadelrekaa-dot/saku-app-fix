@@ -42,26 +42,27 @@ class _DashboardPageState extends State<DashboardPage> {
     if (widget.userName != null && widget.userEmail != null) {
       _userName = widget.userName!;
       _userEmail = widget.userEmail!;
-      if (mounted) setState(() => _loadingUser = false);
     } else {
       final saved = await LaravelApiService.instance.getSavedUser();
       if (mounted) {
-        setState(() {
-          _userName = saved?.name ?? 'Pengguna';
-          _userEmail = saved?.email ?? '';
-          _loadingUser = false;
-        });
+        _userName = saved?.name ?? 'Pengguna';
+        _userEmail = saved?.email ?? '';
       }
     }
-    _loadLocalPhoto();
+    await _loadLocalPhoto();
+    if (mounted) setState(() => _loadingUser = false);
     _refreshUserFromApi();
   }
 
   Future<void> _loadLocalPhoto() async {
-    final localPath =
-        '${Directory.systemTemp.path}/saku_photos/profile_photo.jpg';
-    if (await File(localPath).exists() && mounted) {
-      setState(() => _photoUrl = localPath);
+    try {
+      final localPath =
+          '${Directory.systemTemp.path}/saku_photos/profile_photo.jpg';
+      if (await File(localPath).exists() && mounted) {
+        setState(() => _photoUrl = localPath);
+      }
+    } catch (_) {
+      // Local photo not available, ignore.
     }
   }
 

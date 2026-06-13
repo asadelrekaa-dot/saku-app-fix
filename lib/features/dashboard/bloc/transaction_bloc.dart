@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/laravel_api_service.dart';
@@ -54,8 +56,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         apiId: event.item.apiId,
         apiType: event.item.apiType,
       );
-    } catch (_) {
-      // Keep local state when API is unavailable.
+    } catch (e) {
+      log('[TransactionBloc] Failed to mark settled', error: e);
     }
   }
 
@@ -96,8 +98,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
               .toList(),
         ),
       );
-    } catch (_) {
-      // Local-first behavior when API is unreachable.
+    } catch (e) {
+      log('[TransactionBloc] Failed to sync transaction to API', error: e);
     }
   }
 }

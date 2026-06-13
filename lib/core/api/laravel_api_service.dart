@@ -122,7 +122,6 @@ class LaravelApiService {
       authorized: false,
     );
     final auth = await _storeAuth(data);
-    await ensureDefaultWallet();
     return auth;
   }
 
@@ -211,6 +210,36 @@ class LaravelApiService {
 
   Future<void> deleteWallet({required int id}) async {
     await _delete('/wallets/$id');
+  }
+
+  Future<String> chatWithAi({
+    required String message,
+    List<Map<String, String>>? history,
+    Map<String, dynamic>? context,
+  }) async {
+    final data = await _post('/ai/chat', body: {
+      'message': message,
+      if (history != null) 'history': history,
+      if (context != null) 'context': context,
+    });
+    return data['reply'] as String? ?? '';
+  }
+
+  Future<WalletItem> updateWallet({
+    required int id,
+    required String name,
+    bool isPrimary = false,
+  }) async {
+    final data = await _put('/wallets/$id', body: {
+      'nama_wallet': name,
+      if (isPrimary) 'is_primary': true,
+    });
+    final item = data['data'] as Map<String, dynamic>;
+    return WalletItem(
+      id: item['id'] as int? ?? id,
+      name: (item['nama_wallet'] ?? name).toString(),
+      balance: int.tryParse((item['nominal'] ?? '0').toString()) ?? 0,
+    );
   }
 
   Future<List<Map<String, dynamic>>> getBudgets() async {
