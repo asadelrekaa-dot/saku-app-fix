@@ -189,6 +189,12 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
       _selectedTime.hour, _selectedTime.minute,
     ).toIso8601String();
 
+    final deadline = _isDailyNote
+        ? null
+        : DateTime(
+            _deadlineDate.year, _deadlineDate.month, _deadlineDate.day,
+          ).toIso8601String();
+
     final name = _nameController.text.trim();
     final note = _noteController.text.trim();
     final title = _isDailyNote
@@ -209,6 +215,7 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
         date: dateStr,
         time: timeStr,
         rawDate: rawDate,
+        deadline: deadline,
         icon: categoryIcon(title),
         color: isMoneyOut ? SakuColors.danger : SakuColors.success,
       ),

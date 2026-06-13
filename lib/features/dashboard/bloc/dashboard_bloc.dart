@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../../../core/api/laravel_api_service.dart';
+import '../../../core/notification/notification_service.dart';
 import '../../../core/repository/local_repository.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/dashboard_shared.dart' show categoryIcon;
@@ -41,6 +42,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   static const _homeWidgetProvider = 'SakuSummaryWidgetProvider';
   final _repo = const LocalRepository();
+  final Set<String> _notifiedBudgetKeys = {};
+  final Set<String> _notifiedSpendingKeys = {};
 
   Future<void> _adjustWalletBalance(int delta) async {
     try {
@@ -83,6 +86,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     ]);
     _recalculateBudgetProgress(emit);
     await _syncHomeWidget();
+    NotificationService.instance.scheduleDailyReminder();
+    _checkAndNotify();
   }
 
   Future<void> _fetchTransactions() async {
@@ -168,6 +173,11 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
             ? '${title == 'Beri Pinjaman' ? 'Pinjaman ke' : 'Hutang ke'} ${(item['nama'] ?? '').toString()}'
             : note;
 
+    final deadlineRaw = item['deadline'] as String?;
+    final deadlineParsed = deadlineRaw != null
+        ? (DateTime.tryParse(deadlineRaw)?.toIso8601String())
+        : null;
+
     return DashboardTransaction(
       title: title,
       note: linkNote,
@@ -179,6 +189,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       apiId: (item['id'] as int?) ?? item['id']?.toString().hashCode,
       apiType: type,
       rawDate: waktu.isNotEmpty ? waktu : null,
+      deadline: deadlineParsed,
     );
   }
 
@@ -230,6 +241,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     );
     _recalculateBudgetProgress(emit);
     await _syncHomeWidget();
+    _checkNotifications();
 
     try {
       final synced = await LaravelApiService.instance.createTransaction(
@@ -238,6 +250,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           note: event.item.note,
           amountValue: event.item.amountValue,
           rawDate: event.item.rawDate,
+          deadline: event.item.deadline,
         ),
       );
       final saved = event.item.copyWith(
@@ -321,6 +334,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     );
     _recalculateBudgetProgress(emit);
     await _syncHomeWidget();
+    _checkNotifications();
     await _repo.deleteTransaction(event.item);
     await _adjustWalletBalance(-event.item.amountValue);
 
@@ -381,6 +395,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     );
     _recalculateBudgetProgress(emit);
     await _syncHomeWidget();
+    _checkNotifications();
     await _repo.updateTransaction(event.oldItem, event.newItem);
     await _adjustWalletBalance(event.newItem.amountValue - event.oldItem.amountValue);
 
@@ -393,10 +408,57 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           note: event.newItem.note,
           amountValue: event.newItem.amountValue,
           rawDate: event.newItem.rawDate,
+          deadline: event.newItem.deadline,
         ),
       );
     } catch (_) {
     }
+  }
+
+  Future<void> _checkAndNotify() async {
+    for (final budget in state.budgets) {
+      if (budget.amountValue <= 0) continue;
+      final thresholdCrossed = budget.progress >= 0.8;
+      final key = 'budget:${budget.title}:${budget.amountValue}';
+      if (thresholdCrossed) {
+        if (!_notifiedBudgetKeys.contains(key)) {
+          _notifiedBudgetKeys.add(key);
+          final remaining =
+              budget.amountValue - (budget.amountValue * budget.progress).round();
+          NotificationService.instance.showBudgetLowNotification(
+            budget.title,
+            remaining,
+            (1 - budget.progress) * 100,
+          );
+        }
+      } else {
+        _notifiedBudgetKeys.remove(key);
+      }
+    }
+
+    try {
+      final wallets = await _repo.loadWallets();
+      final walletBalance = wallets.fold<int>(0, (sum, w) => sum + w.balance);
+      if (walletBalance > 0) {
+        final totalExpense = state.currentExpense;
+        final spendingKey = 'spending:$walletBalance';
+        if (totalExpense > walletBalance * 0.5) {
+          if (!_notifiedSpendingKeys.contains(spendingKey)) {
+            _notifiedSpendingKeys.add(spendingKey);
+            NotificationService.instance.showHighSpendingNotification(
+              totalExpense,
+              walletBalance,
+            );
+          }
+        } else {
+          _notifiedSpendingKeys.remove(spendingKey);
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _checkNotifications() async {
+    _checkAndNotify();
   }
 
   Future<void> _syncHomeWidget() async {

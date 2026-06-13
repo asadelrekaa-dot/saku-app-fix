@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -26,6 +28,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   String _userName = '';
   String _userEmail = '';
+  String? _photoUrl;
   bool _loadingUser = true;
   static const _homeWidgetProvider = 'SakuSummaryWidgetProvider';
 
@@ -40,16 +43,53 @@ class _DashboardPageState extends State<DashboardPage> {
       _userName = widget.userName!;
       _userEmail = widget.userEmail!;
       if (mounted) setState(() => _loadingUser = false);
-      return;
+    } else {
+      final saved = await LaravelApiService.instance.getSavedUser();
+      if (mounted) {
+        setState(() {
+          _userName = saved?.name ?? 'Pengguna';
+          _userEmail = saved?.email ?? '';
+          _loadingUser = false;
+        });
+      }
     }
-    final saved = await LaravelApiService.instance.getSavedUser();
-    if (mounted) {
-      setState(() {
-        _userName = saved?.name ?? 'Pengguna';
-        _userEmail = saved?.email ?? '';
-        _loadingUser = false;
-      });
+    _loadLocalPhoto();
+    _refreshUserFromApi();
+  }
+
+  Future<void> _loadLocalPhoto() async {
+    final localPath =
+        '${Directory.systemTemp.path}/saku_photos/profile_photo.jpg';
+    if (await File(localPath).exists() && mounted) {
+      setState(() => _photoUrl = localPath);
     }
+  }
+
+  Future<void> _refreshUserFromApi() async {
+    try {
+      final profile = await LaravelApiService.instance.getProfile();
+      if (mounted) {
+        setState(() {
+          _userName = profile.name;
+          _userEmail = profile.email;
+          if (profile.photoUrl != null) _photoUrl = profile.photoUrl;
+        });
+        await LaravelApiService.instance.saveUserLocally(
+          name: profile.name,
+          email: profile.email,
+        );
+      }
+    } catch (_) {
+      // keep local values
+    }
+  }
+
+  void _onProfileUpdated(String name, String email, String? photoUrl) {
+    setState(() {
+      _userName = name;
+      _userEmail = email;
+      if (photoUrl != null) _photoUrl = photoUrl;
+    });
   }
 
   Future<void> _requestHomeWidget() async {
@@ -126,7 +166,9 @@ Expanded(
                               state: state,
                               userName: _userName,
                               userEmail: _userEmail,
+                              photoUrl: _photoUrl,
                               onRequestHomeWidget: _requestHomeWidget,
+                              onProfileUpdated: _onProfileUpdated,
                             ),
                           ),
                         );

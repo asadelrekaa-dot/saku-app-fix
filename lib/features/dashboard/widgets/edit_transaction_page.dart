@@ -31,6 +31,7 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
   List<WalletItem> _wallets = [];
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
+  late DateTime _deadlineDate;
 
   static const _months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -49,6 +50,10 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
 
   String get _timeText {
     return '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  String get _deadlineText {
+    return '${_deadlineDate.day} ${_months[_deadlineDate.month - 1]} ${_deadlineDate.year}';
   }
 
   DateTime? _parseDateFromItem(String dateStr) {
@@ -77,6 +82,10 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
             minute: int.tryParse(item.time.split(':').lastOrNull ?? '') ?? now.minute,
           )
         : TimeOfDay.fromDateTime(now);
+
+    _deadlineDate = item != null && item.deadline != null
+        ? (DateTime.tryParse(item.deadline!) ?? now.add(const Duration(days: 30)))
+        : now.add(const Duration(days: 30));
 
     final person = item == null
         ? ''
@@ -159,6 +168,21 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
     }
   }
 
+  Future<void> _pickDeadlineDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _deadlineDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pilih Jatuh Tempo',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null && mounted) {
+      setState(() => _deadlineDate = picked);
+    }
+  }
+
   Future<void> _openCategoryPicker() async {
     final category = await Navigator.of(context).push<String>(
       MaterialPageRoute(
@@ -188,6 +212,12 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
       _selectedTime.hour, _selectedTime.minute,
     ).toIso8601String();
 
+    final deadline = _isDaily
+        ? null
+        : DateTime(
+            _deadlineDate.year, _deadlineDate.month, _deadlineDate.day,
+          ).toIso8601String();
+
     final name = _nameController.text.trim();
     final note = _noteController.text.trim();
     final title = _isDaily ? _category : item.title;
@@ -205,6 +235,7 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
         date: _dateText,
         time: _timeText,
         rawDate: rawDate,
+        deadline: deadline,
         icon: categoryIcon(title),
         color: isMoneyOut ? SakuColors.danger : SakuColors.success,
       ),
@@ -259,11 +290,31 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
                   icon: categoryIcon(_category),
                   onTap: _openCategoryPicker,
                 )
-              else
+              else ...[
                 EditablePillField(
                   label: 'Nama',
                   controller: _nameController,
                 ),
+                const SizedBox(height: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Jatuh Tempo',
+                      style: TextStyle(
+                        color: SakuColors.black,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _EditTappablePillField(
+                      text: _deadlineText,
+                      icon: Icons.calendar_month_rounded,
+                      onTap: _pickDeadlineDate,
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 14),
               EditablePillField(
                 label: 'Catatan',

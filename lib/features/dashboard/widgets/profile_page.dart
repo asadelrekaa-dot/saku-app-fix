@@ -16,12 +16,14 @@ class ProfileDashboard extends StatefulWidget {
     required this.initialEmail,
     required this.onOpenNotifications,
     required this.onAddHomeWidget,
+    this.onProfileUpdated,
   });
 
   final String initialName;
   final String initialEmail;
   final VoidCallback onOpenNotifications;
   final VoidCallback onAddHomeWidget;
+  final void Function(String name, String email, String? photoUrl)? onProfileUpdated;
 
   @override
   State<ProfileDashboard> createState() => ProfileDashboardState();
@@ -168,6 +170,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
         const SnackBar(content: Text('Profil disimpan secara lokal')),
       );
     }
+    widget.onProfileUpdated?.call(name, email, _photoUrl);
   }
 
   Future<void> _updatePasswordOnApi(
@@ -222,8 +225,10 @@ class ProfileDashboardState extends State<ProfileDashboard> {
         if (url.isNotEmpty) {
           setState(() => _photoUrl = url);
         }
+        widget.onProfileUpdated?.call(_profileName, _profileEmail, _photoUrl);
       } catch (e) {
         log('[Profile] API upload failed, using local photo', error: e);
+        widget.onProfileUpdated?.call(_profileName, _profileEmail, _photoUrl);
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

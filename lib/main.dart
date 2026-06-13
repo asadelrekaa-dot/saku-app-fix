@@ -9,6 +9,7 @@ import 'package:home_widget/home_widget.dart';
 
 import 'core/api/laravel_api_service.dart';
 import 'core/bloc/saku_bloc_observer.dart';
+import 'core/notification/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/register_page.dart';
@@ -19,6 +20,7 @@ import 'features/splash/splash_page.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Bloc.observer = SakuBlocObserver();
+  NotificationService.instance.init();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

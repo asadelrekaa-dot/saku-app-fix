@@ -15,13 +15,17 @@ class DashboardContent extends StatelessWidget {
     required this.state,
     required this.userName,
     required this.userEmail,
+    this.photoUrl,
     required this.onRequestHomeWidget,
+    this.onProfileUpdated,
   });
 
   final DashboardState state;
   final String userName;
   final String userEmail;
+  final String? photoUrl;
   final VoidCallback onRequestHomeWidget;
+  final void Function(String name, String email, String? photoUrl)? onProfileUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +84,9 @@ class DashboardContent extends StatelessWidget {
           },
           child: switch (state.currentIndex) {
              0 => HomeDashboard(
-                 userName: userName,
-                 transactions: state.transactions,
+                  userName: userName,
+                  photoUrl: photoUrl,
+                  transactions: state.transactions,
                  onOpenHistory: () => bloc.add(const DashboardTabSelected(1)),
                  onOpenBudget: () => bloc
                      .add(const DashboardSurfaceShown(DashboardSurface.budget)),
@@ -99,13 +104,14 @@ class DashboardContent extends StatelessWidget {
                     bloc.add(DashboardTransactionSettled(item)),
               ),
             2 => ChartDashboard(transactions: state.transactions),
-            _ => ProfileDashboard(
+             _ => ProfileDashboard(
                 initialName: userName,
                 initialEmail: userEmail,
                 onOpenNotifications: () => bloc.add(
                   const DashboardSurfaceShown(DashboardSurface.notifications),
                 ),
                 onAddHomeWidget: onRequestHomeWidget,
+                onProfileUpdated: onProfileUpdated,
               ),
           },
         ),

@@ -14,6 +14,7 @@ abstract class ITransactionRepository {
     required String title,
     required String note,
     required int amountValue,
+    String? deadline,
   });
 
   Future<void> updateTransaction({
@@ -22,6 +23,7 @@ abstract class ITransactionRepository {
     required String title,
     required String note,
     required int amountValue,
+    String? deadline,
   });
 
   Future<void> deleteTransaction({
@@ -43,6 +45,7 @@ class ApiTransactionRepository implements ITransactionRepository {
     required String title,
     required String note,
     required int amountValue,
+    String? deadline,
   }) async {
     try {
       final result = await LaravelApiService.instance.createTransaction(
@@ -50,6 +53,7 @@ class ApiTransactionRepository implements ITransactionRepository {
           title: title,
           note: note,
           amountValue: amountValue,
+          deadline: deadline,
         ),
       );
       return SyncResult(result.apiId, result.apiType);
@@ -66,6 +70,7 @@ class ApiTransactionRepository implements ITransactionRepository {
     required String title,
     required String note,
     required int amountValue,
+    String? deadline,
   }) async {
     try {
       await LaravelApiService.instance.updateTransaction(
@@ -75,6 +80,7 @@ class ApiTransactionRepository implements ITransactionRepository {
           title: title,
           note: note,
           amountValue: amountValue,
+          deadline: deadline,
         ),
       );
     } catch (e, s) {

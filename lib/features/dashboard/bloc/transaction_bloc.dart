@@ -79,6 +79,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           title: item.title,
           note: item.note,
           amountValue: item.amountValue,
+          deadline: item.deadline,
         ),
       );
       emit(

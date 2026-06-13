@@ -27,7 +27,7 @@ class LocalRepository {
     final path = await getDatabasesPath();
     return openDatabase(
       '$path/saku.db',
-      version: 6,
+      version: 7,
       onCreate: _createDb,
       onUpgrade: _upgradeDb,
     );
@@ -46,6 +46,7 @@ class LocalRepository {
         api_id INTEGER,
         api_type TEXT,
         raw_date TEXT,
+        deadline TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     ''');
@@ -103,6 +104,13 @@ class LocalRepository {
         // Column already exists, ignore.
       }
     }
+    if (oldVersion < 7) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN deadline TEXT');
+      } catch (_) {
+        // Column already exists, ignore.
+      }
+    }
   }
 
   // ── Transactions ──
@@ -132,6 +140,7 @@ class LocalRepository {
       apiId: row['api_id'] as int?,
       apiType: row['api_type'] as String?,
       rawDate: row['raw_date'] as String?,
+      deadline: row['deadline'] as String?,
     );
   }
 
@@ -298,6 +307,7 @@ class LocalRepository {
       'api_id': item.apiId,
       'api_type': item.apiType,
       'raw_date': item.rawDate,
+      'deadline': item.deadline,
     };
   }
 

@@ -74,6 +74,7 @@ class DashboardTransaction {
     this.apiId,
     this.apiType,
     this.rawDate,
+    this.deadline,
   });
 
   final String title;
@@ -87,6 +88,7 @@ class DashboardTransaction {
   final int? apiId;
   final String? apiType;
   final String? rawDate;
+  final String? deadline;
 
   String get amount {
     final sign = amountValue < 0 ? '-' : '+';
@@ -105,6 +107,7 @@ class DashboardTransaction {
     Object? apiId = _noValue,
     Object? apiType = _noValue,
     Object? rawDate = _noValue,
+    Object? deadline = _noValue,
   }) {
     return DashboardTransaction(
       title: title ?? this.title,
@@ -118,6 +121,7 @@ class DashboardTransaction {
       apiId: apiId == _noValue ? this.apiId : apiId as int?,
       apiType: apiType == _noValue ? this.apiType : apiType as String?,
       rawDate: rawDate == _noValue ? this.rawDate : rawDate as String?,
+      deadline: deadline == _noValue ? this.deadline : deadline as String?,
     );
   }
 }

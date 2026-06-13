@@ -1,7 +1,9 @@
-import 'dashboard_shared.dart';
-import 'history_page.dart';
+import 'dart:io';
 
 import 'dart:developer';
+
+import 'dashboard_shared.dart';
+import 'history_page.dart';
 
 import '../../../core/repository/local_repository.dart';
 
@@ -9,6 +11,7 @@ class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     required this.userName,
+    this.photoUrl,
     required this.transactions,
     required this.onOpenHistory,
     required this.onOpenBudget,
@@ -17,6 +20,7 @@ class HomeDashboard extends StatefulWidget {
   });
 
   final String userName;
+  final String? photoUrl;
   final List<DashboardTransaction> transactions;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenBudget;
@@ -77,6 +81,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       children: [
         _HomeHeroSection(
           userName: widget.userName,
+          photoUrl: widget.photoUrl,
           balance: totalBalance,
           expense: expense,
           income: income,
@@ -99,6 +104,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 class _HomeHeroSection extends StatelessWidget {
   const _HomeHeroSection({
     required this.userName,
+    this.photoUrl,
     required this.balance,
     required this.expense,
     required this.income,
@@ -107,6 +113,7 @@ class _HomeHeroSection extends StatelessWidget {
   });
 
   final String userName;
+  final String? photoUrl;
   final int balance;
   final int expense;
   final int income;
@@ -156,6 +163,7 @@ class _HomeHeroSection extends StatelessWidget {
             top: 36,
             child: _BalanceCard(
               userName: userName,
+              photoUrl: photoUrl,
               balance: balance,
               expense: expense,
               income: income,
@@ -214,12 +222,14 @@ class _HomeBodyPanel extends StatelessWidget {
 class _BalanceCard extends StatelessWidget {
   const _BalanceCard({
     required this.userName,
+    this.photoUrl,
     required this.balance,
     required this.expense,
     required this.income,
   });
 
   final String userName;
+  final String? photoUrl;
   final int balance;
   final int expense;
   final int income;
@@ -243,14 +253,21 @@ class _BalanceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 24,
                 backgroundColor: SakuColors.blue50,
-                child: Icon(
-                  Icons.person_rounded,
-                  color: SakuColors.blue700,
-                  size: 29,
-                ),
+                backgroundImage: photoUrl != null
+                    ? (photoUrl!.startsWith('http')
+                        ? NetworkImage(photoUrl!) as ImageProvider
+                        : FileImage(File(photoUrl!)))
+                    : null,
+                child: photoUrl == null
+                    ? const Icon(
+                        Icons.person_rounded,
+                        color: SakuColors.blue700,
+                        size: 29,
+                      )
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(

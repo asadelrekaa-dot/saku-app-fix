@@ -53,12 +53,14 @@ class LaravelTransactionDraft {
     required this.note,
     required this.amountValue,
     this.rawDate,
+    this.deadline,
   });
 
   final String title;
   final String note;
   final int amountValue;
   final String? rawDate;
+  final String? deadline;
 }
 
 class LaravelApiException implements Exception {
@@ -281,6 +283,7 @@ class LaravelApiService {
       body['kategori_id'] = _categoryId(item.title, item.amountValue > 0);
     } else {
       body['nama'] = _personName(item);
+      body['deadline'] = item.deadline ?? DateTime.now().add(const Duration(days: 30)).toIso8601String();
     }
 
     final data = await _post('/$apiType', body: body);
@@ -319,6 +322,7 @@ class LaravelApiService {
       body['kategori_id'] = _categoryId(item.title, item.amountValue > 0);
     } else {
       body['nama'] = _personName(item);
+      body['deadline'] = item.deadline ?? DateTime.now().add(const Duration(days: 30)).toIso8601String();
     }
 
     await _put('/$apiType/$apiId', body: body);
