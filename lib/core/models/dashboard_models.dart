@@ -131,11 +131,17 @@ class DashboardTransaction {
 }
 
 class WalletItem {
-  const WalletItem({required this.name, required this.balance, this.id});
+  const WalletItem({
+    required this.name,
+    required this.balance,
+    this.id,
+    this.icon,
+  });
 
   final int? id;
   final String name;
   final int balance;
+  final String? icon;
 }
 
 String formatPlainAmount(int value) {

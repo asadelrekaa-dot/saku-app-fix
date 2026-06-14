@@ -1,7 +1,10 @@
 import '../../../core/api/laravel_api_service.dart';
+import '../../../core/repository/local_repository.dart';
 
 import 'dashboard_shared.dart';
 import 'add_note_page.dart';
+import 'dialog/category_picker_sheet.dart';
+import 'dialog/wallet_picker_sheet.dart';
 
 class EditTransactionDashboard extends StatefulWidget {
   const EditTransactionDashboard({
@@ -28,6 +31,7 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
   late String _category;
   int? _selectedWalletId;
   String _selectedWalletName = 'Dompet';
+  String? _selectedWalletIcon;
   List<WalletItem> _wallets = [];
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
@@ -103,15 +107,29 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
   }
 
   Future<void> _fetchWallets() async {
-    final wallets = await LaravelApiService.instance.getWallets();
-    if (!mounted) return;
-    setState(() {
-      _wallets = wallets;
+    final repo = const LocalRepository();
+    try {
+      final wallets = await LaravelApiService.instance.getWallets();
       if (wallets.isNotEmpty) {
-        _selectedWalletId = wallets.first.id;
-        _selectedWalletName = wallets.first.name;
+        if (!mounted) return;
+        setState(() {
+          _wallets = wallets;
+          _selectedWalletId = wallets.first.id;
+          _selectedWalletName = wallets.first.name;
+          _selectedWalletIcon = wallets.first.icon;
+        });
+        return;
       }
-    });
+    } catch (_) {}
+    final local = await repo.loadWallets();
+    if (local.isNotEmpty && mounted) {
+      setState(() {
+        _wallets = local;
+        _selectedWalletId = local.first.id;
+        _selectedWalletName = local.first.name;
+        _selectedWalletIcon = local.first.icon;
+      });
+    }
   }
 
   Future<void> _openWalletPicker() async {
@@ -125,6 +143,9 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
           setState(() {
             _selectedWalletId = id;
             _selectedWalletName = name;
+            _selectedWalletIcon = _wallets
+                .firstWhere((w) => w.id == id, orElse: () => _wallets.first)
+                .icon;
           });
           LaravelApiService.instance.cacheWalletId(id);
         },
@@ -349,6 +370,7 @@ class EditTransactionDashboardState extends State<EditTransactionDashboard> {
                 width: 164,
                 child: WalletPicker(
                   walletName: _selectedWalletName,
+                  walletIcon: _selectedWalletIcon,
                   onTap: _openWalletPicker,
                 ),
               ),

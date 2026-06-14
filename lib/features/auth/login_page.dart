@@ -89,6 +89,11 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final user = await GoogleAuthService.instance.authenticate();
       if (!mounted) return;
+      await LaravelApiService.instance.saveGoogleSession(
+        name: _displayNameFromUser(user.displayName, user.email),
+        email: user.email ?? 'google@saku.app',
+      );
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => DashboardPage(

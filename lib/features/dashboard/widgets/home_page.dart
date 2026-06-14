@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'dart:developer';
 
+import 'dialog/wallet_picker_sheet.dart';
 import 'dashboard_shared.dart';
 import 'history_page.dart';
 
@@ -27,7 +28,7 @@ class HomeDashboard extends StatefulWidget {
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenInsight;
-  final ValueChanged<DashboardTransaction> onMarkSettled;
+  final void Function(DashboardTransaction item, int walletId) onMarkSettled;
 
   @override
   State<HomeDashboard> createState() => _HomeDashboardState();
@@ -35,6 +36,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> {
   int _walletBalance = 0;
+  List<WalletItem> _wallets = [];
   final _repo = const LocalRepository();
 
   @override
@@ -56,6 +58,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       final wallets = await _repo.loadWallets();
       if (!mounted) return;
       setState(() {
+        _wallets = wallets;
         _walletBalance = wallets.fold<int>(0, (sum, w) => sum + w.balance);
       });
     } catch (e, s) {
@@ -65,12 +68,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final isSmall = MediaQuery.of(context).size.width < 380;
     final transactions = widget.transactions;
-    final totalBalance = transactions.fold<int>(
-          0,
-          (sum, item) => sum + item.amountValue,
-        ) +
-        _walletBalance;
+    final totalBalance = _walletBalance;
     final expense = transactions
         .where((item) => item.amountValue < 0)
         .fold<int>(0, (sum, item) => sum + item.amountValue.abs());
@@ -79,9 +79,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
         .fold<int>(0, (sum, item) => sum + item.amountValue);
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
+      padding: EdgeInsets.only(bottom: isSmall ? 80 : 96),
       children: [
         _HomeHeroSection(
+          isSmall: isSmall,
           userName: widget.userName,
           photoUrl: widget.photoUrl,
           balance: totalBalance,
@@ -91,8 +92,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
           onOpenInsight: widget.onOpenInsight,
         ),
         _HomeBodyPanel(
+          isSmall: isSmall,
           transactions: transactions,
           budgets: widget.budgets,
+          wallets: _wallets,
           onOpenHistory: widget.onOpenHistory,
           onOpenBudget: widget.onOpenBudget,
           debtTransactions: transactions.where((t) =>
@@ -107,6 +110,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
 class _HomeHeroSection extends StatelessWidget {
   const _HomeHeroSection({
+    required this.isSmall,
     required this.userName,
     this.photoUrl,
     required this.balance,
@@ -116,6 +120,7 @@ class _HomeHeroSection extends StatelessWidget {
     required this.onOpenInsight,
   });
 
+  final bool isSmall;
   final String userName;
   final String? photoUrl;
   final int balance;
@@ -126,17 +131,25 @@ class _HomeHeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heroH = isSmall ? 460 : 525;
+    final slabH = isSmall ? 410 : 472;
+    final curveTop = isSmall ? 360 : 418;
+    final cardTop = isSmall ? 28.0 : 36.0;
+    final toolsTop = isSmall ? 338.0 : 388.0;
+    final hMargin = isSmall ? 16.0 : 20.0;
+    final curveRadius = isSmall ? 36.0 : 46.0;
+
     return SizedBox(
-      height: 525,
+      height: heroH.toDouble(),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Positioned(
+          Positioned(
             left: 0,
             top: 0,
             right: 0,
-            height: 472,
-            child: DecoratedBox(
+            height: slabH.toDouble(),
+            child: const DecoratedBox(
               decoration: BoxDecoration(
                 color: SakuColors.blue100,
                 image: DecorationImage(
@@ -147,25 +160,26 @@ class _HomeHeroSection extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
-            top: 418,
+            top: curveTop.toDouble(),
             bottom: 0,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: SakuColors.white,
                 borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(46),
+                  top: Radius.circular(curveRadius),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: 20,
-            right: 20,
-            top: 36,
+            left: hMargin,
+            right: hMargin,
+            top: cardTop,
             child: _BalanceCard(
+              isSmall: isSmall,
               userName: userName,
               photoUrl: photoUrl,
               balance: balance,
@@ -174,10 +188,11 @@ class _HomeHeroSection extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 20,
-            right: 20,
-            top: 388,
+            left: hMargin,
+            right: hMargin,
+            top: toolsTop,
             child: _HeroTools(
+              isSmall: isSmall,
               onOpenBudget: onOpenBudget,
               onOpenInsight: onOpenInsight,
             ),
@@ -190,42 +205,48 @@ class _HomeHeroSection extends StatelessWidget {
 
 class _HomeBodyPanel extends StatelessWidget {
   const _HomeBodyPanel({
+    required this.isSmall,
     required this.transactions,
     required this.budgets,
     required this.onOpenHistory,
     required this.onOpenBudget,
     required this.debtTransactions,
+    required this.wallets,
     required this.onMarkSettled,
   });
 
+  final bool isSmall;
   final List<DashboardTransaction> transactions;
   final List<DashboardBudget> budgets;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenBudget;
   final List<DashboardTransaction> debtTransactions;
-  final ValueChanged<DashboardTransaction> onMarkSettled;
+  final List<WalletItem> wallets;
+  final void Function(DashboardTransaction item, int walletId) onMarkSettled;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: SakuColors.white,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      padding: EdgeInsets.fromLTRB(isSmall ? 16 : 20, 0, isSmall ? 16 : 20, 0),
       child: Column(
         children: [
           _RecentNotesCard(
+            isSmall: isSmall,
             transactions: transactions.take(2).toList(),
             onOpenMore: onOpenHistory,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isSmall ? 16 : 20),
           if (budgets.isNotEmpty) ...[
             _BudgetRingkasanCard(budgets: budgets, onTap: onOpenBudget),
-            const SizedBox(height: 20),
+            SizedBox(height: isSmall ? 16 : 20),
           ] else ...[
             _CreateBudgetCard(onTap: onOpenBudget),
-            const SizedBox(height: 20),
+            SizedBox(height: isSmall ? 16 : 20),
           ],
           _ActiveDebtCard(
             debtTransactions: debtTransactions,
+            wallets: wallets,
             onMarkSettled: onMarkSettled,
           ),
         ],
@@ -417,8 +438,9 @@ class _MiniBudgetRow extends StatelessWidget {
   }
 }
 
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends StatefulWidget {
   const _BalanceCard({
+    required this.isSmall,
     required this.userName,
     this.photoUrl,
     required this.balance,
@@ -426,6 +448,7 @@ class _BalanceCard extends StatelessWidget {
     required this.income,
   });
 
+  final bool isSmall;
   final String userName;
   final String? photoUrl;
   final int balance;
@@ -433,12 +456,20 @@ class _BalanceCard extends StatelessWidget {
   final int income;
 
   @override
+  State<_BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<_BalanceCard> {
+  bool _showBalance = true;
+
+  @override
   Widget build(BuildContext context) {
+    final s = widget.isSmall;
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      padding: EdgeInsets.fromLTRB(s ? 16 : 22, s ? 16 : 22, s ? 16 : 22, s ? 14 : 20),
       decoration: BoxDecoration(
         color: SakuColors.blue900.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(s ? 22 : 28),
         boxShadow: [
           BoxShadow(
             color: SakuColors.blue900.withValues(alpha: 0.22),
@@ -452,57 +483,62 @@ class _BalanceCard extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                radius: 24,
+                radius: s ? 20 : 24,
                 backgroundColor: SakuColors.blue50,
-                backgroundImage: photoUrl != null
-                    ? (photoUrl!.startsWith('http')
-                        ? NetworkImage(photoUrl!) as ImageProvider
-                        : FileImage(File(photoUrl!)))
+                backgroundImage: widget.photoUrl != null
+                    ? (widget.photoUrl!.startsWith('http')
+                        ? NetworkImage(widget.photoUrl!) as ImageProvider
+                        : FileImage(File(widget.photoUrl!)))
                     : null,
-                child: photoUrl == null
-                    ? const Icon(
+                child: widget.photoUrl == null
+                    ? Icon(
                         Icons.person_rounded,
                         color: SakuColors.blue700,
-                        size: 29,
+                        size: s ? 24 : 29,
                       )
                     : null,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: s ? 10 : 12),
               Expanded(
                 child: Text(
-                  'Hei, $userName!',
+                  'Hei, ${widget.userName}!',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: SakuColors.white,
-                    fontSize: 20,
+                    fontSize: s ? 17 : 20,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const Row(
+          SizedBox(height: s ? 16 : 20),
+          Row(
             children: [
               Expanded(
                 child: Text(
                   'Total Saldo',
                   style: TextStyle(
                     color: SakuColors.white,
-                    fontSize: 16,
+                    fontSize: s ? 14 : 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              Icon(
-                Icons.visibility_outlined,
-                color: SakuColors.white,
-                size: 27,
+              GestureDetector(
+                onTap: () => setState(() => _showBalance = !_showBalance),
+                child: Icon(
+                  _showBalance
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: SakuColors.white,
+                  size: s ? 23 : 27,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 11),
+          SizedBox(height: s ? 9 : 11),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
@@ -515,16 +551,18 @@ class _BalanceCard extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                formatPlain(balance),
-                style: const TextStyle(
+                _showBalance
+                    ? formatPlain(widget.balance)
+                    : 'Rp *** ***',
+                style: TextStyle(
                   color: SakuColors.neutral700,
-                  fontSize: 24,
+                  fontSize: s ? 20 : 24,
                   fontWeight: FontWeight.w900,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 13),
+          SizedBox(height: s ? 10 : 13),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
@@ -536,17 +574,19 @@ class _BalanceCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _HeroMetric(
+                    isSmall: s,
                     title: 'Pengeluaran',
-                    amount: formatPlain(expense),
+                    amount: formatPlain(widget.expense),
                     icon: Icons.trending_down_rounded,
                     color: SakuColors.danger,
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: s ? 8 : 10),
                 Expanded(
                   child: _HeroMetric(
+                    isSmall: s,
                     title: 'Pemasukan',
-                    amount: formatPlain(income),
+                    amount: formatPlain(widget.income),
                     icon: Icons.trending_up_rounded,
                     color: SakuColors.success,
                   ),
@@ -562,12 +602,14 @@ class _BalanceCard extends StatelessWidget {
 
 class _HeroMetric extends StatelessWidget {
   const _HeroMetric({
+    required this.isSmall,
     required this.title,
     required this.amount,
     required this.icon,
     required this.color,
   });
 
+  final bool isSmall;
   final String title;
   final String amount;
   final IconData icon;
@@ -577,8 +619,8 @@ class _HeroMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: color, size: 21),
-        const SizedBox(width: 7),
+        Icon(icon, color: color, size: isSmall ? 18 : 21),
+        SizedBox(width: isSmall ? 5 : 7),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,9 +629,9 @@ class _HeroMetric extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   color: SakuColors.black,
-                  fontSize: 11,
+                  fontSize: isSmall ? 10 : 11,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -599,9 +641,9 @@ class _HeroMetric extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   amount,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: SakuColors.black,
-                    fontSize: 16,
+                    fontSize: isSmall ? 14 : 16,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -616,38 +658,42 @@ class _HeroMetric extends StatelessWidget {
 
 class _HeroTools extends StatelessWidget {
   const _HeroTools({
+    required this.isSmall,
     required this.onOpenBudget,
     required this.onOpenInsight,
   });
 
+  final bool isSmall;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenInsight;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 108,
+      height: isSmall ? 96 : 108,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
-              width: 210,
+              width: isSmall ? 175 : 210,
               padding: const EdgeInsets.all(11),
               decoration: cardDecoration(radius: 16),
               child: Row(
                 children: [
                   Expanded(
                     child: _ToolShortcut(
+                      isSmall: isSmall,
                       title: 'Budgeting',
                       icon: Icons.savings_rounded,
                       onTap: onOpenBudget,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: isSmall ? 8 : 10),
                   Expanded(
                     child: _ToolShortcut(
+                      isSmall: isSmall,
                       title: 'Saku Insight',
                       icon: Icons.insights_rounded,
                       onTap: onOpenInsight,
@@ -657,13 +703,13 @@ class _HeroTools extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             right: 2,
             bottom: -2,
             child: Image(
-              image: AssetImage('assets/Maskot-dashboard.png'),
-              width: 138,
-              height: 88,
+              image: const AssetImage('assets/Maskot-dashboard.png'),
+              width: isSmall ? 110 : 138,
+              height: isSmall ? 70 : 88,
               fit: BoxFit.contain,
             ),
           ),
@@ -675,17 +721,20 @@ class _HeroTools extends StatelessWidget {
 
 class _ToolShortcut extends StatelessWidget {
   const _ToolShortcut({
+    required this.isSmall,
     required this.title,
     required this.icon,
     required this.onTap,
   });
 
+  final bool isSmall;
   final String title;
   final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = isSmall ? 44.0 : 52.0;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
@@ -693,24 +742,24 @@ class _ToolShortcut extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: iconSize,
+            height: iconSize,
             decoration: BoxDecoration(
               color: SakuColors.blue50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: SakuColors.blue100, width: 2),
             ),
-            child: Icon(icon, color: SakuColors.blue300, size: 30),
+            child: Icon(icon, color: SakuColors.blue300, size: isSmall ? 24 : 30),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: isSmall ? 5 : 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               title,
               maxLines: 1,
-              style: const TextStyle(
+              style: TextStyle(
                 color: SakuColors.black,
-                fontSize: 13,
+                fontSize: isSmall ? 11 : 13,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -723,10 +772,12 @@ class _ToolShortcut extends StatelessWidget {
 
 class _RecentNotesCard extends StatelessWidget {
   const _RecentNotesCard({
+    required this.isSmall,
     required this.transactions,
     required this.onOpenMore,
   });
 
+  final bool isSmall;
   final List<DashboardTransaction> transactions;
   final VoidCallback onOpenMore;
 
@@ -770,6 +821,7 @@ class _RecentNotesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = isSmall;
     final latestDate = transactions.isNotEmpty ? transactions.first.date : '';
     final totalDisplay = transactions.fold<int>(
       0,
@@ -780,15 +832,15 @@ class _RecentNotesCard extends StatelessWidget {
       decoration: cardDecoration(radius: 18),
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 8),
+          Padding(
+            padding: EdgeInsets.fromLTRB(s ? 14 : 16, s ? 12 : 14, s ? 14 : 16, s ? 6 : 8),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Catatan Terakhir',
                 style: TextStyle(
                   color: SakuColors.black,
-                  fontSize: 18,
+                  fontSize: s ? 16 : 18,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -796,35 +848,35 @@ class _RecentNotesCard extends StatelessWidget {
           ),
           Container(
             color: SakuColors.blue50,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            padding: EdgeInsets.symmetric(horizontal: s ? 14 : 16, vertical: s ? 9 : 11),
             child: Row(
               children: [
                 Text(
                   _day(latestDate),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: SakuColors.black,
-                    fontSize: 32,
+                    fontSize: s ? 26 : 32,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: s ? 10 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _month(latestDate),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: SakuColors.black,
-                          fontSize: 18,
+                          fontSize: s ? 16 : 18,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       Text(
                         _dayName(latestDate),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: SakuColors.neutral300,
-                          fontSize: 15,
+                          fontSize: s ? 13 : 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -833,9 +885,9 @@ class _RecentNotesCard extends StatelessWidget {
                 ),
                 Text(
                   formatPlain(totalDisplay),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: SakuColors.neutral700,
-                    fontSize: 17,
+                    fontSize: s ? 15 : 17,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -856,8 +908,8 @@ class _RecentNotesCard extends StatelessWidget {
                 bottom: Radius.circular(18),
               ),
               onTap: onOpenMore,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: s ? 14 : 16, vertical: s ? 12 : 14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -868,7 +920,7 @@ class _RecentNotesCard extends StatelessWidget {
                           'Lihat riwayat lainnya',
                           style: TextStyle(
                             color: SakuColors.neutral600,
-                            fontSize: 16,
+                            fontSize: s ? 14 : 16,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -894,11 +946,13 @@ class _RecentNotesCard extends StatelessWidget {
 class _ActiveDebtCard extends StatelessWidget {
   const _ActiveDebtCard({
     required this.debtTransactions,
+    required this.wallets,
     required this.onMarkSettled,
   });
 
   final List<DashboardTransaction> debtTransactions;
-  final ValueChanged<DashboardTransaction> onMarkSettled;
+  final List<WalletItem> wallets;
+  final void Function(DashboardTransaction item, int walletId) onMarkSettled;
 
   String _personName(DashboardTransaction t) {
     final cleaned = t.note
@@ -939,7 +993,8 @@ class _ActiveDebtCard extends StatelessWidget {
                   amount: formatPlain(t.amountValue.abs()),
                   due: t.date,
                   settled: t.settled,
-                  onMarkSettled: () => onMarkSettled(t),
+                  wallets: wallets,
+                  onSettle: (walletId) => onMarkSettled(t, walletId),
                 ),
               ],
             );
@@ -956,7 +1011,8 @@ class _DebtTile extends StatelessWidget {
     required this.person,
     required this.amount,
     required this.due,
-    required this.onMarkSettled,
+    required this.wallets,
+    required this.onSettle,
     this.settled = false,
   });
 
@@ -964,15 +1020,36 @@ class _DebtTile extends StatelessWidget {
   final String person;
   final String amount;
   final String due;
-  final VoidCallback onMarkSettled;
+  final List<WalletItem> wallets;
+  final ValueChanged<int> onSettle;
   final bool settled;
+
+  void _handleTap(BuildContext context) {
+    if (wallets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Belum ada dompet. Buat dompet di halaman Profil.')),
+      );
+      return;
+    }
+    showModalBottomSheet<int>(
+      context: context,
+      builder: (ctx) => WalletPickerSheet(
+        wallets: wallets,
+        selectedId: wallets.first.id,
+        onSelected: (id, name) {
+          Navigator.of(ctx).pop();
+          onSettle(id);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onMarkSettled,
+        onTap: () => _handleTap(context),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1077,7 +1154,7 @@ class _DebtTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: onMarkSettled,
+                onTap: () => _handleTap(context),
                 child: Container(
                   width: 32,
                   height: 32,

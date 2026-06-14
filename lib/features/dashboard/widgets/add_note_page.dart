@@ -1,7 +1,12 @@
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../../core/api/laravel_api_service.dart';
+import '../../../core/repository/local_repository.dart';
 import '../../../core/utils/expression_calculator.dart';
 
 import 'dashboard_shared.dart';
+import 'dialog/category_picker_sheet.dart';
+import 'dialog/wallet_picker_sheet.dart';
 
 class AddNoteDashboard extends StatefulWidget {
   const AddNoteDashboard({
@@ -32,6 +37,7 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
   String _incomeCategory = 'Gaji';
   int? _selectedWalletId;
   String _selectedWalletName = 'Dompet';
+  String? _selectedWalletIcon;
   List<WalletItem> _wallets = [];
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
@@ -75,15 +81,29 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
   }
 
   Future<void> _fetchWallets() async {
-    final wallets = await LaravelApiService.instance.getWallets();
-    if (!mounted) return;
-    setState(() {
-      _wallets = wallets;
+    final repo = const LocalRepository();
+    try {
+      final wallets = await LaravelApiService.instance.getWallets();
       if (wallets.isNotEmpty) {
-        _selectedWalletId = wallets.first.id;
-        _selectedWalletName = wallets.first.name;
+        if (!mounted) return;
+        setState(() {
+          _wallets = wallets;
+          _selectedWalletId = wallets.first.id;
+          _selectedWalletName = wallets.first.name;
+          _selectedWalletIcon = wallets.first.icon;
+        });
+        return;
       }
-    });
+    } catch (_) {}
+    final local = await repo.loadWallets();
+    if (local.isNotEmpty && mounted) {
+      setState(() {
+        _wallets = local;
+        _selectedWalletId = local.first.id;
+        _selectedWalletName = local.first.name;
+        _selectedWalletIcon = local.first.icon;
+      });
+    }
   }
 
   Future<void> _pickDate() async {
@@ -140,6 +160,9 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
           setState(() {
             _selectedWalletId = id;
             _selectedWalletName = name;
+            _selectedWalletIcon = _wallets
+                .firstWhere((w) => w.id == id, orElse: () => _wallets.first)
+                .icon;
           });
           LaravelApiService.instance.cacheWalletId(id);
         },
@@ -321,6 +344,7 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
                   width: 164,
                   child: WalletPicker(
                     walletName: _selectedWalletName,
+                    walletIcon: _selectedWalletIcon,
                     onTap: _openWalletPicker,
                   ),
                 ),
@@ -365,6 +389,7 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
                   width: 164,
                   child: WalletPicker(
                     walletName: _selectedWalletName,
+                    walletIcon: _selectedWalletIcon,
                     onTap: _openWalletPicker,
                   ),
                 ),
@@ -419,103 +444,6 @@ class AddNoteDashboardState extends State<AddNoteDashboard> {
   }
 }
 
-class CategoryPickerSheet extends StatelessWidget {
-  const CategoryPickerSheet({
-    super.key,
-    required this.selectedCategory,
-    required this.onSelected,
-    this.kind = CategoryKind.expense,
-    this.includeAll = false,
-  });
-
-  final String selectedCategory;
-  final ValueChanged<String> onSelected;
-  final CategoryKind kind;
-  final bool includeAll;
-
-  static const _expenseCategories = [
-    'Makanan',
-    'Transportasi',
-    'Rumah',
-    'Kesehatan',
-    'Belanja',
-    'Kecantikan',
-    'Hiburan',
-    'Pendidikan',
-    'Olahraga',
-    'Darurat',
-    'Sedekah',
-    'Lainnya',
-  ];
-
-  static const _incomeCategories = [
-    'Gaji',
-    'Freelance',
-    'Bisnis',
-    'Hadiah',
-    'Penjualan',
-    'Investasi',
-    'Sewa',
-    'Uang Saku',
-    'Lainnya',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final baseItems = _categoriesForKind(kind);
-    final items = includeAll ? ['Semua', ...baseItems] : baseItems;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Pilih Kategori',
-              style: TextStyle(
-                color: SakuColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Flexible(
-              child: GridView.builder(
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.95,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final category = items[index];
-                  final selected = category == selectedCategory;
-                  return _CategoryChoiceTile(
-                    title: category,
-                    icon: categoryIcon(category),
-                    selected: selected,
-                    onTap: () => onSelected(category),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-enum CategoryKind { expense, income }
-
-List<String> _categoriesForKind(CategoryKind kind) {
-  return kind == CategoryKind.income
-      ? CategoryPickerSheet._incomeCategories
-      : CategoryPickerSheet._expenseCategories;
-}
 
 class CategorySelectionPage extends StatelessWidget {
   const CategorySelectionPage({
@@ -529,7 +457,7 @@ class CategorySelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = _categoriesForKind(kind);
+    final categories = categoriesForKind(kind);
     final title = kind == CategoryKind.income
         ? 'Kategori Pemasukan'
         : 'Kategori Pengeluaran';
@@ -606,15 +534,24 @@ class _CategoryPageTile extends StatelessWidget {
               width: selected ? 2 : 1,
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (asset != null)
-                Image.asset(asset, width: 38, height: 38, fit: BoxFit.contain)
+                ClipRect(
+                  child: SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: SvgPicture.asset(
+                      asset,
+                      fit: BoxFit.scaleDown,
+                    ),
+                  ),
+                )
               else
-                Icon(categoryIcon(title), color: SakuColors.mango500, size: 36),
-              const SizedBox(height: 8),
+                Icon(categoryIcon(title), color: SakuColors.mango500, size: 28),
+              const SizedBox(height: 6),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
@@ -636,60 +573,6 @@ class _CategoryPageTile extends StatelessWidget {
   }
 }
 
-class _CategoryChoiceTile extends StatelessWidget {
-  const _CategoryChoiceTile({
-    required this.title,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? SakuColors.blue100 : SakuColors.neutral100,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor:
-                    selected ? SakuColors.blue300 : SakuColors.white,
-                child: Icon(
-                  icon,
-                  color: selected ? SakuColors.white : SakuColors.mango500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: SakuColors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _AddNoteTypeSelector extends StatelessWidget {
   const _AddNoteTypeSelector({
@@ -1076,180 +959,6 @@ class EditablePillField extends StatelessWidget {
   }
 }
 
-class WalletPicker extends StatelessWidget {
-  const WalletPicker({
-    super.key,
-    required this.walletName,
-    required this.onTap,
-  });
-
-  final String walletName;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: SakuColors.white,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: SakuColors.neutral300),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.credit_card_rounded, color: SakuColors.mango500),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  walletName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SakuColors.neutral700,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: SakuColors.black),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class WalletPickerSheet extends StatelessWidget {
-  const WalletPickerSheet({super.key,
-    required this.wallets,
-    required this.selectedId,
-    required this.onSelected,
-  });
-
-  final List<WalletItem> wallets;
-  final int? selectedId;
-  final void Function(int id, String name) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Pilih Dompet',
-              style: TextStyle(
-                color: SakuColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (wallets.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'Belum ada dompet.\nBuat dompet dulu di halaman Profil.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: SakuColors.neutral600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ...List.generate(wallets.length, (index) {
-                final wallet = wallets[index];
-                final selected = wallet.id == selectedId;
-                return _WalletTile(
-                  name: wallet.name,
-                  balance: wallet.balance,
-                  selected: selected,
-                  onTap: () => onSelected(wallet.id!, wallet.name),
-                );
-              }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WalletTile extends StatelessWidget {
-  const _WalletTile({
-    required this.name,
-    required this.balance,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String name;
-  final int balance;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: selected ? SakuColors.blue50 : SakuColors.neutral50,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                const Icon(Icons.credit_card_rounded,
-                    color: SakuColors.mango500),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        formatPlain(balance),
-                        style: const TextStyle(
-                          color: SakuColors.neutral600,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (selected)
-                  const Icon(Icons.check_circle_rounded,
-                      color: SakuColors.blue300),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _AmountDisplay extends StatelessWidget {
   const _AmountDisplay({required this.amount});

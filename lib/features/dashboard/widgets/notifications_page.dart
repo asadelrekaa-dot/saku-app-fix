@@ -30,32 +30,7 @@ class _NotificationsDashboardState extends State<NotificationsDashboard> {
   }
 
   List<NotificationItem> _fallbackNotifications() {
-    return const [
-      NotificationItem(
-        id: 1,
-        title: 'Jangan lupa catat ya. sudah ada\npengeluaran hari ini?',
-        time: '4:40 PM',
-        icon: Icons.edit_note_rounded,
-        iconColor: SakuColors.neutral700,
-        isRead: false,
-      ),
-      NotificationItem(
-        id: 2,
-        title: 'Pengeluaran meningkat kamu\nmenghabiskan lebih banyak dari pada\nbiasanya',
-        time: '6.30 PM',
-        icon: Icons.trending_down_rounded,
-        iconColor: SakuColors.danger,
-        isRead: false,
-      ),
-      NotificationItem(
-        id: 3,
-        title: 'Pengeluaran tercatat\nkamu baru saja mengeluarkan Rp\n50.000 untuk makan',
-        time: '8.25 PM',
-        icon: Icons.edit_note_rounded,
-        iconColor: SakuColors.neutral700,
-        isRead: false,
-      ),
-    ];
+    return const [];
   }
 
   // Fungsi refresh jika user menarik halaman ke bawah (Pull to Refresh)

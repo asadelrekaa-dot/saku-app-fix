@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../../core/api/laravel_api_service.dart';
-import 'widgets/budget_page.dart';
+import 'widgets/dialog/budget_form_dialog.dart';
 import 'widgets/dashboard_content.dart';
 import 'widgets/dashboard_shared.dart';
 

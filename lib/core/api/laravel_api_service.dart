@@ -78,7 +78,7 @@ class LaravelApiService {
   static final LaravelApiService instance = LaravelApiService._();
 
   // ── Ganti IP ini sesuai jaringan kamu saat testing di HP ──
-  static const _overrideUrl = "https://decrease-boasting-fanciness.ngrok-free.dev/api";
+  static const _overrideUrl = "http://api.rrizkazzah.my.id/api";
   // ── Atau override via: flutter run --dart-define=SAKU_API_BASE_URL=... ──
 
   static const _baseUrl = String.fromEnvironment(
@@ -152,6 +152,16 @@ class LaravelApiService {
     await prefs.setString(_userEmailKey, email);
   }
 
+  Future<void> saveGoogleSession({
+    required String name,
+    required String email,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, 'google_auth');
+    await prefs.setString(_userNameKey, name);
+    await prefs.setString(_userEmailKey, email);
+  }
+
   Future<void> updateProfile({
     required String name,
     required String email,
@@ -186,6 +196,7 @@ class LaravelApiService {
         id: map['id'] as int?,
         name: (map['nama_wallet'] ?? 'Dompet').toString(),
         balance: int.tryParse((map['nominal'] ?? '0').toString()) ?? 0,
+        icon: map['icon'] as String?,
       );
     }).toList();
   }
@@ -194,17 +205,20 @@ class LaravelApiService {
     required String name,
     required int balance,
     bool isPrimary = false,
+    String? icon,
   }) async {
     final data = await _post('/wallet', body: {
       'nama_wallet': name,
       'nominal': balance,
       if (isPrimary) 'is_primary': true,
+      if (icon != null) 'icon': icon,
     });
     final item = data['data'] as Map<String, dynamic>;
     return WalletItem(
       id: item['id'] as int?,
       name: (item['nama_wallet'] ?? name).toString(),
       balance: int.tryParse((item['nominal'] ?? balance).toString()) ?? balance,
+      icon: item['icon'] as String?,
     );
   }
 
@@ -229,16 +243,19 @@ class LaravelApiService {
     required int id,
     required String name,
     bool isPrimary = false,
+    String? icon,
   }) async {
     final data = await _put('/wallets/$id', body: {
       'nama_wallet': name,
       if (isPrimary) 'is_primary': true,
+      if (icon != null) 'icon': icon,
     });
     final item = data['data'] as Map<String, dynamic>;
     return WalletItem(
       id: item['id'] as int? ?? id,
       name: (item['nama_wallet'] ?? name).toString(),
       balance: int.tryParse((item['nominal'] ?? '0').toString()) ?? 0,
+      icon: item['icon'] as String?,
     );
   }
 
@@ -252,10 +269,12 @@ class LaravelApiService {
   Future<Map<String, dynamic>> createBudget({
     required int kategoriId,
     required int nominal,
+    int? walletId,
   }) async {
     final data = await _post('/budgets', body: {
       'kategori_id': kategoriId,
       'nominal': nominal,
+      if (walletId != null) 'wallet_id': walletId,
     });
     return (data['data'] as Map<String, dynamic>?) ?? {};
   }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'dashboard_shared.dart';
+import 'dialog/category_sheet.dart';
 
 enum _PeriodType { daily, weekly, monthly }
 
@@ -345,7 +346,7 @@ class _CategoryDonut extends StatelessWidget {
     Color(0xFF5AC97B),
   ];
 
-  List<_ChartCategory> get _categories {
+  List<ChartCategory> get _categories {
     final grouped = <String, int>{};
     for (final item in filtered) {
       grouped[item.title] =
@@ -353,7 +354,7 @@ class _CategoryDonut extends StatelessWidget {
     }
     if (grouped.isEmpty) {
       return const [
-        _ChartCategory(
+        ChartCategory(
           title: 'Belum ada',
           percent: 100,
           amountValue: 0,
@@ -367,7 +368,7 @@ class _CategoryDonut extends StatelessWidget {
     return grouped.entries.map((entry) {
       final color = _palette[index % _palette.length];
       index += 1;
-      return _ChartCategory(
+      return ChartCategory(
         title: entry.key,
         percent: math.max(1, ((entry.value / total) * 100).round()),
         amountValue: entry.value,
@@ -458,7 +459,7 @@ class _CategoryDonut extends StatelessWidget {
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(28)),
                     ),
-                    builder: (context) => _CategorySheet(
+                    builder: (context) => CategorySheet(
                       categories: categories,
                     ),
                   );
@@ -492,54 +493,12 @@ class _CategoryDonut extends StatelessWidget {
   }
 }
 
-class _CategorySheet extends StatelessWidget {
-  const _CategorySheet({required this.categories});
 
-  final List<_ChartCategory> categories;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Semua Kategori',
-              style: TextStyle(
-                color: SakuColors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 12),
-            for (final cat in categories)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: cat.color,
-                  child: Icon(cat.icon, color: SakuColors.black),
-                ),
-                title: Text(cat.title),
-                subtitle: Text('Rp ${formatPlain(cat.amountValue)}'),
-                trailing: Text(
-                  '${cat.percent}%',
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _CategoryRow extends StatelessWidget {
   const _CategoryRow(this.category);
 
-  final _ChartCategory category;
+  final ChartCategory category;
 
   @override
   Widget build(BuildContext context) {
@@ -578,26 +537,11 @@ class _CategoryRow extends StatelessWidget {
   }
 }
 
-class _ChartCategory {
-  const _ChartCategory({
-    required this.title,
-    required this.percent,
-    required this.amountValue,
-    required this.icon,
-    required this.color,
-  });
-
-  final String title;
-  final int percent;
-  final int amountValue;
-  final IconData icon;
-  final Color color;
-}
 
 class _DonutChartPainter extends CustomPainter {
   const _DonutChartPainter(this.categories);
 
-  final List<_ChartCategory> categories;
+  final List<ChartCategory> categories;
 
   @override
   void paint(Canvas canvas, Size size) {

@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/laravel_api_service.dart';
@@ -8,6 +9,9 @@ import '../../../core/repository/local_repository.dart';
 import '../../auth/google_auth_service.dart';
 import '../../auth/login_page.dart';
 import 'dashboard_shared.dart';
+import 'dialog/profile_edit_dialog.dart';
+import 'dialog/wallet_detail_dialog.dart';
+import 'dialog/wallet_form_dialog.dart';
 
 class ProfileDashboard extends StatefulWidget {
   const ProfileDashboard({
@@ -97,7 +101,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
   void _openAddWalletDialog() {
     showDialog<void>(
       context: context,
-      builder: (ctx) => _WalletFormDialog(
+      builder: (ctx) => WalletFormDialog(
         onSave: (wallet, isPrimary) {
           Navigator.of(ctx).pop();
           setState(() => _wallets.add(wallet));
@@ -110,7 +114,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
   void _editWallet(WalletItem item) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => _WalletFormDialog(
+      builder: (ctx) => WalletFormDialog(
         existing: item,
         onSave: (updated, isPrimary) async {
           Navigator.of(ctx).pop();
@@ -119,6 +123,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
               id: updated.id!,
               name: updated.name,
               isPrimary: isPrimary,
+              icon: updated.icon,
             );
             if (!mounted) return;
             setState(() {
@@ -128,6 +133,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
                   id: result.id,
                   name: result.name,
                   balance: item.balance,
+                  icon: result.icon ?? updated.icon,
                 );
               }
             });
@@ -136,7 +142,14 @@ class ProfileDashboardState extends State<ProfileDashboard> {
             if (!mounted) return;
             setState(() {
               final index = _wallets.indexWhere((w) => w.id == item.id);
-              if (index != -1) _wallets[index] = updated;
+              if (index != -1) {
+                _wallets[index] = WalletItem(
+                  id: item.id,
+                  name: updated.name,
+                  balance: item.balance,
+                  icon: updated.icon,
+                );
+              }
             });
             await _repo.replaceAllWallets(_wallets);
           }
@@ -151,12 +164,11 @@ class ProfileDashboardState extends State<ProfileDashboard> {
         name: wallet.name,
         balance: wallet.balance,
         isPrimary: isPrimary,
+        icon: wallet.icon,
       );
       if (!mounted) return;
       setState(() {
-        final index = _wallets.indexWhere(
-          (w) => w.name == wallet.name && w.balance == wallet.balance,
-        );
+        final index = _wallets.indexWhere((w) => identical(w, wallet));
         if (index != -1) {
           _wallets[index] = created;
         }
@@ -164,14 +176,13 @@ class ProfileDashboardState extends State<ProfileDashboard> {
     } catch (_) {
       // API failed, keep local version
     }
-    // Save to local DB regardless of API success
     await _repo.replaceAllWallets(_wallets);
   }
 
-  void _openProfileEditDialog(_ProfileEditField field) {
+  void _openProfileEditDialog(ProfileEditField field) {
     showDialog<void>(
       context: context,
-      builder: (context) => _ProfileEditDialog(
+      builder: (context) => ProfileEditDialog(
         field: field,
         currentName: _profileName,
         currentEmail: _profileEmail,
@@ -291,7 +302,7 @@ class ProfileDashboardState extends State<ProfileDashboard> {
   void _showWalletDetail(WalletItem item) {
     showDialog<void>(
       context: context,
-      builder: (context) => _WalletDetailDialog(
+      builder: (context) => WalletDetailDialog(
         item: item,
         onDelete: item.id != null ? () => _deleteWallet(item) : null,
         onEdit: item.id != null ? () => _editWallet(item) : null,
@@ -371,21 +382,21 @@ class ProfileDashboardState extends State<ProfileDashboard> {
                 icon: Icons.person_rounded,
                 title: 'Nama',
                 subtitle: _profileName,
-                onTap: () => _openProfileEditDialog(_ProfileEditField.name),
+                onTap: () => _openProfileEditDialog(ProfileEditField.name),
               ),
               const SizedBox(height: 12),
               _ProfileMenuTile(
                 icon: Icons.mail_rounded,
                 title: 'Email',
                 subtitle: _profileEmail,
-                onTap: () => _openProfileEditDialog(_ProfileEditField.email),
+                onTap: () => _openProfileEditDialog(ProfileEditField.email),
               ),
               const SizedBox(height: 12),
               _ProfileMenuTile(
                 icon: Icons.lock_rounded,
                 title: 'Password',
                 subtitle: _passwordChanged ? 'Sudah diperbarui' : '********',
-                onTap: () => _openProfileEditDialog(_ProfileEditField.password),
+                onTap: () => _openProfileEditDialog(ProfileEditField.password),
               ),
               const SizedBox(height: 24),
               const _ProfileSectionTitle('Pengaturan'),
@@ -422,262 +433,10 @@ class ProfileDashboardState extends State<ProfileDashboard> {
   }
 }
 
-enum _ProfileEditField { name, email, password }
 
-class _ProfileEditDialog extends StatefulWidget {
-  const _ProfileEditDialog({
-    required this.field,
-    required this.currentName,
-    required this.currentEmail,
-    required this.onSaveName,
-    required this.onSaveEmail,
-    required this.onSavePassword,
-  });
 
-  final _ProfileEditField field;
-  final String currentName;
-  final String currentEmail;
-  final ValueChanged<String> onSaveName;
-  final ValueChanged<String> onSaveEmail;
-  final void Function(String oldPassword, String newPassword) onSavePassword;
 
-  @override
-  State<_ProfileEditDialog> createState() => _ProfileEditDialogState();
-}
 
-class _ProfileEditDialogState extends State<_ProfileEditDialog> {
-  late final TextEditingController _primaryController;
-  late final TextEditingController _passwordController;
-  late final TextEditingController _confirmPasswordController;
-
-  bool get _isName => widget.field == _ProfileEditField.name;
-  bool get _isEmail => widget.field == _ProfileEditField.email;
-  bool get _isPassword => widget.field == _ProfileEditField.password;
-
-  String get _title {
-    return switch (widget.field) {
-      _ProfileEditField.name => 'Edit Nama',
-      _ProfileEditField.email => 'Edit Email',
-      _ProfileEditField.password => 'Ganti Password',
-    };
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _primaryController = TextEditingController(
-      text: _isName
-          ? widget.currentName
-          : _isEmail
-              ? widget.currentEmail
-              : '',
-    );
-    _passwordController = TextEditingController();
-    _confirmPasswordController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _primaryController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    if (_isPassword) {
-      final oldPassword = _primaryController.text.trim();
-      final newPassword = _passwordController.text.trim();
-      if (newPassword.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password baru minimal 6 karakter'),
-          ),
-        );
-        return;
-      }
-      widget.onSavePassword(oldPassword, newPassword);
-      return;
-    }
-
-    final value = _primaryController.text.trim();
-    if (value.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data belum diisi')),
-      );
-      return;
-    }
-
-    if (_isEmail && !value.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format email belum benar')),
-      );
-      return;
-    }
-
-    if (_isName) {
-      widget.onSaveName(value);
-    } else {
-      widget.onSaveEmail(value);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-      backgroundColor: SakuColors.white,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SakuColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 22),
-            if (!_isPassword)
-              _ProfileEditFieldInput(
-                label: _isEmail ? 'Email' : 'Nama',
-                controller: _primaryController,
-                keyboardType:
-                    _isEmail ? TextInputType.emailAddress : TextInputType.text,
-                icon: _isEmail ? Icons.mail_rounded : Icons.person_rounded,
-              )
-            else ...[
-              _ProfileEditFieldInput(
-                label: 'Password lama',
-                controller: _primaryController,
-                obscureText: true,
-                icon: Icons.edit_rounded,
-                hintText: 'Masukkan password lama',
-              ),
-              const SizedBox(height: 14),
-              _ProfileEditFieldInput(
-                label: 'Password baru',
-                controller: _passwordController,
-                obscureText: true,
-                icon: Icons.edit_rounded,
-                hintText: 'Masukkan password baru',
-              ),
-            ],
-            const SizedBox(height: 34),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SakuColors.mango500,
-                      side: const BorderSide(
-                        color: SakuColors.mango500,
-                        width: 2,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: const Text(
-                      'Batal',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _save,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: SakuColors.blue300,
-                      foregroundColor: SakuColors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileEditFieldInput extends StatelessWidget {
-  const _ProfileEditFieldInput({
-    required this.label,
-    required this.controller,
-    required this.icon,
-    this.keyboardType,
-    this.obscureText = false,
-    this.hintText,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final String? hintText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: SakuColors.black,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          decoration: InputDecoration(
-            hintText: hintText,
-            suffixIcon: Icon(icon, color: SakuColors.black),
-            filled: true,
-            fillColor: SakuColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 15,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: const BorderSide(color: SakuColors.neutral300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: const BorderSide(color: SakuColors.blue300),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
@@ -812,11 +571,20 @@ class _WalletCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 22,
                   backgroundColor: SakuColors.blue300,
-                  child:
-                      Icon(Icons.credit_card_rounded, color: SakuColors.white),
+                  child: item.icon != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: SvgPicture.asset(
+                            'assets/icons/dompet/${item.icon}',
+                            width: 22,
+                            height: 22,
+                          ),
+                        )
+                      : const Icon(Icons.credit_card_rounded,
+                          color: SakuColors.white),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -851,153 +619,8 @@ class _WalletCard extends StatelessWidget {
   }
 }
 
-class _WalletDetailDialog extends StatelessWidget {
-  const _WalletDetailDialog({required this.item, this.onDelete, this.onEdit});
 
-  final WalletItem item;
-  final VoidCallback? onDelete;
-  final VoidCallback? onEdit;
 
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      backgroundColor: SakuColors.white,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(
-              radius: 28,
-              backgroundColor: SakuColors.blue300,
-              child: Icon(Icons.account_balance_wallet_rounded, color: SakuColors.white),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              item.name,
-              style: const TextStyle(
-                color: SakuColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Rp ${formatPlain(item.balance)}',
-              style: const TextStyle(
-                color: SakuColors.neutral600,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                if (onEdit != null) ...[
-                  Expanded(
-                    child: _DialogActionButton(
-                      label: 'Edit',
-                      icon: Icons.edit_rounded,
-                      color: SakuColors.blue700,
-                      bgColor: SakuColors.blue50,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        onEdit?.call();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                if (onDelete != null) ...[
-                  Expanded(
-                    child: _DialogActionButton(
-                      label: 'Hapus',
-                      icon: Icons.delete_outline_rounded,
-                      color: Colors.red,
-                      bgColor: Colors.red.shade50,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        onDelete?.call();
-                      },
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: SakuColors.neutral600,
-                  side: const BorderSide(color: SakuColors.neutral300),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text('Tutup',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DialogActionButton extends StatelessWidget {
-  const _DialogActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.bgColor,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final Color bgColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _AddWalletCard extends StatelessWidget {
   const _AddWalletCard({required this.onTap});
@@ -1113,269 +736,7 @@ class _ProfileMenuTile extends StatelessWidget {
   }
 }
 
-class _WalletFormDialog extends StatefulWidget {
-  const _WalletFormDialog({required this.onSave, this.existing});
 
-  final void Function(WalletItem wallet, bool isPrimary) onSave;
-  final WalletItem? existing;
-
-  @override
-  State<_WalletFormDialog> createState() => _WalletFormDialogState();
-}
-
-class _WalletFormDialogState extends State<_WalletFormDialog> {
-  final _nameController = TextEditingController();
-  final _balanceController = TextEditingController();
-  bool _isPrimary = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.existing != null) {
-      _nameController.text = widget.existing!.name;
-      _balanceController.text = widget.existing!.balance.toString();
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _balanceController.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final name = _nameController.text.trim();
-    final balance = parseCurrency(_balanceController.text);
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama dompet belum diisi')),
-      );
-      return;
-    }
-    final wallet = widget.existing != null
-        ? WalletItem(id: widget.existing!.id, name: name, balance: balance)
-        : WalletItem(name: name, balance: balance);
-    widget.onSave(wallet, _isPrimary);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final availableHeight = MediaQuery.sizeOf(context).height -
-        MediaQuery.viewInsetsOf(context).bottom -
-        32;
-
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.bottomCenter,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      backgroundColor: SakuColors.white,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: availableHeight),
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.existing != null ? 'Edit Dompet' : 'Buat Dompet baru',
-                style: const TextStyle(
-                  color: SakuColors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _WalletDialogField(
-                      label: 'Nama Dompet',
-                      child: TextField(
-                        controller: _nameController,
-                        decoration: _walletInputDecoration('Nama dompet'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _WalletDialogField(
-                      label: 'Pilih Icon',
-                      child: Container(
-                        height: 51,
-                        decoration: BoxDecoration(
-                          color: SakuColors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(color: SakuColors.neutral300),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.account_balance_wallet_rounded,
-                              color: SakuColors.mango500,
-                            ),
-                            SizedBox(width: 16),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: SakuColors.black,
-                              size: 27,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (widget.existing == null)
-                _WalletDialogField(
-                  label: 'Saldo Awal',
-                  child: TextField(
-                    controller: _balanceController,
-                    keyboardType: TextInputType.number,
-                    decoration: _walletInputDecoration('Masukkan saldo awal..'),
-                  ),
-                ),
-              const SizedBox(height: 12),
-              InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => setState(() => _isPrimary = !_isPrimary),
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: _isPrimary,
-                      onChanged: (value) {
-                        setState(() => _isPrimary = value ?? false);
-                      },
-                      shape: const CircleBorder(),
-                      side: const BorderSide(color: SakuColors.neutral300),
-                      activeColor: SakuColors.blue300,
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'Jadikan Dompet Utama',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: SakuColors.neutral300,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: SakuColors.mango500,
-                        side: const BorderSide(
-                          color: SakuColors.mango500,
-                          width: 2.4,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                      ),
-                      child: const Text(
-                        'Batal',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _save,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: SakuColors.blue300,
-                        foregroundColor: SakuColors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                      ),
-                      child: const Text(
-                        'Simpan',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WalletDialogField extends StatelessWidget {
-  const _WalletDialogField({
-    required this.label,
-    required this.child,
-  });
-
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: SakuColors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
-    );
-  }
-}
-
-InputDecoration _walletInputDecoration(String hintText) {
-  return InputDecoration(
-    hintText: hintText,
-    filled: true,
-    fillColor: SakuColors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(28),
-      borderSide: const BorderSide(color: SakuColors.neutral300),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(28),
-      borderSide: const BorderSide(color: SakuColors.neutral300),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(28),
-      borderSide: const BorderSide(color: SakuColors.blue300),
-    ),
-  );
-}
 
 class _NotificationTile extends StatelessWidget {
   const _NotificationTile({required this.onTap});

@@ -22,8 +22,10 @@ class DashboardEvent with _$DashboardEvent {
       DashboardBudgetDeleted;
   const factory DashboardEvent.transactionDeleted(DashboardTransaction item) =
       DashboardTransactionDeleted;
-  const factory DashboardEvent.transactionSettled(DashboardTransaction item) =
-      DashboardTransactionSettled;
+  const factory DashboardEvent.transactionSettled(
+    DashboardTransaction item,
+    int walletId,
+  ) = DashboardTransactionSettled;
   const factory DashboardEvent.editTransactionOpened(
       DashboardTransaction item) = DashboardEditTransactionOpened;
   const factory DashboardEvent.transactionUpdated({

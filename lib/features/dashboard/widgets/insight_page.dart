@@ -21,20 +21,108 @@ class InsightDashboard extends StatefulWidget {
 
 class InsightDashboardState extends State<InsightDashboard> {
   final _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [
-    const ChatMessage(
-      text:
-          'Halo, aku Saku AI. Aku bisa bantu baca pola catatan, kasih tips hemat, dan bikin arahan budgeting sederhana.',
-      fromUser: false,
-      time: '1:27',
-    ),
-  ];
+  final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _showLocalSummary();
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showLocalSummary() async {
+    final repo = LocalRepository();
+    final wallets = await repo.loadWallets();
+    if (!mounted) return;
+
+    final totalBalance = wallets.fold<int>(0, (s, w) => s + w.balance);
+    final tx = widget.transactions;
+    final now = DateTime.now();
+
+    final thisMonth = tx.where((t) {
+      final d = DateTime.tryParse(t.rawDate ?? '');
+      return d != null && d.month == now.month && d.year == now.year;
+    }).toList();
+    final prevMonth = now.month == 1 ? 12 : now.month - 1;
+    final prevYear = now.month == 1 ? now.year - 1 : now.year;
+    final lastMonth = tx.where((t) {
+      final d = DateTime.tryParse(t.rawDate ?? '');
+      return d != null && d.month == prevMonth && d.year == prevYear;
+    }).toList();
+
+    final income =
+        thisMonth.where((t) => t.amountValue > 0).fold<int>(0, (s, t) => s + t.amountValue);
+    final expense =
+        thisMonth.where((t) => t.amountValue < 0).fold<int>(0, (s, t) => s + t.amountValue.abs());
+    final lastExpense =
+        lastMonth.where((t) => t.amountValue < 0).fold<int>(0, (s, t) => s + t.amountValue.abs());
+
+    final parts = <String>[];
+    parts.add('📊 Ringkasan Keuangan Bulan Ini\n');
+    parts.add('Total Saldo: ${_fmt(totalBalance)}');
+    parts.add('Pemasukan: ${_fmt(income)}');
+    parts.add('Pengeluaran: ${_fmt(expense)}');
+    final net = income - expense;
+    parts.add('Selisih: ${net >= 0 ? '+' : '-'}${_fmt(net.abs())}');
+
+    if (lastExpense > 0) {
+      final diff = ((expense - lastExpense) / lastExpense * 100).round();
+      final arrow = diff > 0 ? '↑' : '↓';
+      parts.add(
+          'Dibanding bulan lalu: $arrow ${diff.abs()}% (${_fmt(lastExpense)} → ${_fmt(expense)})');
+    }
+
+    if (widget.budgets.isNotEmpty) {
+      parts.add('\n📌 Anggaran:');
+      for (final b in widget.budgets) {
+        final pct = (b.progress * 100).round();
+        parts.add('  • ${b.title}: $pct% terpakai');
+      }
+    }
+
+    if (wallets.length > 1) {
+      parts.add('\n👛 Dompet:');
+      for (final w in wallets) {
+        parts.add('  • ${w.name}: ${_fmt(w.balance)}');
+      }
+    }
+
+    parts.add(
+        '\n💡 Ketik pertanyaan atau tap pilihan di atas untuk analisis lebih lanjut.');
+
+    if (!mounted) return;
+    setState(() {
+      _messages.add(ChatMessage(
+        text: parts.join('\n'),
+        fromUser: false,
+        time: 'Sekarang',
+      ));
+    });
+    _scrollToBottom();
+  }
+
+  String _fmt(int n) {
+    final text = n.abs().toString();
+    final buf = StringBuffer(n < 0 ? '-' : '');
+    for (var i = 0; i < text.length; i++) {
+      if (i > 0 && (text.length - i) % 3 == 0) buf.write('.');
+      buf.write(text[i]);
+    }
+    return 'Rp $buf';
+  }
+
+  String _monthName(int m) {
+    const names = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return names[m - 1];
   }
 
   Future<Map<String, dynamic>> _buildContext() async {
@@ -74,6 +162,79 @@ class InsightDashboardState extends State<InsightDashboard> {
     };
   }
 
+  String _generateLocalResponse(String message) {
+    final lower = message.toLowerCase();
+    final tx = widget.transactions;
+    final now = DateTime.now();
+
+    final thisMonth = tx.where((t) {
+      final d = DateTime.tryParse(t.rawDate ?? '');
+      return d != null && d.month == now.month && d.year == now.year;
+    }).toList();
+
+    if (lower.contains('boros') || lower.contains('pengeluaran') || lower.contains('habis')) {
+      final byTitle = <String, int>{};
+      for (final t in thisMonth.where((t) => t.amountValue < 0)) {
+        byTitle.update(t.title, (v) => v + t.amountValue.abs(), ifAbsent: () => t.amountValue.abs());
+      }
+      if (byTitle.isEmpty) return 'Belum ada pengeluaran bulan ini.';
+      final sorted = byTitle.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      final total = sorted.fold<int>(0, (s, e) => s + e.value);
+      final lines = sorted.take(5).map((e) {
+        final pct = (e.value / total * 100).round();
+        return '  • ${e.key}: ${_fmt(e.value)} ($pct%)';
+      }).join('\n');
+      return 'Pengeluaran terbesar bulan ${_monthName(now.month)}:\n$lines\n\nTotal: ${_fmt(total)}';
+    }
+
+    if (lower.contains('tips') || lower.contains('hemat')) {
+      final expense =
+          thisMonth.where((t) => t.amountValue < 0).fold<int>(0, (s, t) => s + t.amountValue.abs());
+      if (expense > 0) {
+        return 'Tips hemat:\n'
+            '1. Catat setiap pengeluaran biar tahu kemana uang pergi\n'
+            '2. Buat anggaran bulanan untuk tiap kategori\n'
+            '3. Bedakan kebutuhan vs keinginan sebelum beli\n'
+            '4. Coba metode 50/30/20 (50% kebutuhan, 30% keinginan, 20% tabungan)\n'
+            '5. Review pengeluaran tiap akhir minggu';
+      }
+      return 'Belum ada data pengeluaran. Mulai catat dulu ya!';
+    }
+
+    if (lower.contains('budget') || lower.contains('anggaran')) {
+      if (widget.budgets.isEmpty) return 'Belum ada anggaran. Buat lewat menu Budgeting di halaman utama!';
+      final lines = widget.budgets.map((b) {
+        final pct = (b.progress * 100).round();
+        return '  • ${b.title}: $pct% terpakai (sisa ${_fmt(b.amountValue - (b.amountValue * b.progress).round())})';
+      }).join('\n');
+      return 'Status anggaran:\n$lines';
+    }
+
+    if (lower.contains('dompet') || lower.contains('wallet')) {
+      return 'Ganti dompet atau tambah dompet baru dari halaman Profil.';
+    }
+
+    if (lower.contains('grafik') || lower.contains('chart')) {
+      return 'Grafik pengeluaran bisa dilihat di tab Grafik (icon grafik di pojok kanan atas halaman utama).';
+    }
+
+    if (lower.contains('hutang') || lower.contains('pinjaman') || lower.contains('lunas')) {
+      return 'Hutang/Pinjaman aktif muncul di halaman utama. Setelah dibayar, tandai lunas dari halaman Riwayat.';
+    }
+
+    if (lower.contains('widget') || lower.contains('homescreen')) {
+      return 'Widget homescreen bisa ditambah dari halaman Profil → Tambah Widget.';
+    }
+
+    if (lower.contains('pembelian') || lower.contains('catat')) {
+      return 'Kamu bisa catat transaksi dari tombol + (Tambah Catatan) di halaman utama. '
+          'Pilih jenisnya (Pemasukan/Pengeluaran/Transfer), isi nominal, kategori, dompet, dan deskripsi.';
+    }
+
+    return 'Maaf, aku belum bisa jawab pertanyaan itu tanpa koneksi server. '
+        'Coba tanya: "Bulan ini boros dimana?", "Tips hemat", atau "Status anggaran".';
+  }
+
   Future<void> _sendMessage(String text) async {
     final message = text.trim();
     if (message.isEmpty) {
@@ -84,12 +245,12 @@ class InsightDashboardState extends State<InsightDashboard> {
     }
 
     setState(() {
-      _messages
-          .add(ChatMessage(text: message, fromUser: true, time: 'Sekarang'));
+      _messages.add(ChatMessage(text: message, fromUser: true, time: 'Sekarang'));
       _isLoading = true;
     });
     _scrollToBottom();
 
+    String reply;
     try {
       final history = _messages
           .where((m) => m != _messages.last)
@@ -100,35 +261,20 @@ class InsightDashboardState extends State<InsightDashboard> {
           .toList();
 
       final ctx = await _buildContext();
-      final reply = await LaravelApiService.instance.chatWithAi(
+      reply = await LaravelApiService.instance.chatWithAi(
         message: message,
         history: history,
         context: ctx,
       );
-
-      if (!mounted) return;
-      setState(() {
-        _messages.add(ChatMessage(text: reply, fromUser: false, time: 'Sekarang'));
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      final errorText = e.toString().contains('AI tidak dikonfigurasi')
-          ? 'Maaf, AI belum dikonfigurasi. Minta admin isi API Key Groq dulu ya.'
-          : e.toString().contains('Kuota AI habis')
-              ? 'Kuota AI gratis habis. Tunggu beberapa saat atau minta admin isi API Key baru.'
-              : e.toString().contains('Gagal menghubungi AI')
-                  ? 'AI lagi error. Coba beberapa saat lagi.'
-                  : 'Maaf, gagal terhubung ke server. Periksa koneksi internet dan coba lagi.';
-      setState(() {
-        _messages.add(ChatMessage(
-          text: errorText,
-          fromUser: false,
-          time: 'Sekarang',
-        ));
-        _isLoading = false;
-      });
+    } catch (_) {
+      reply = _generateLocalResponse(message);
     }
+
+    if (!mounted) return;
+    setState(() {
+      _messages.add(ChatMessage(text: reply, fromUser: false, time: 'Sekarang'));
+      _isLoading = false;
+    });
     _scrollToBottom();
   }
 

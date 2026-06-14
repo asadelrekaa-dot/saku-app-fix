@@ -9,7 +9,7 @@ class SplashPage extends StatefulWidget {
   const SplashPage({
     super.key,
     required this.onFinished,
-    this.duration = const Duration(milliseconds: 2500), // Sesuaikan dengan durasi GIF kamu
+    this.duration = const Duration(milliseconds: 5800), // Sesuaikan dengan durasi GIF kamu
   });
 
   static const routeName = '/splash';
@@ -27,7 +27,6 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    // Timer tetap digunakan untuk memicu callback setelah durasi GIF selesai
     _timer = Timer(widget.duration, widget.onFinished);
   }
 
@@ -42,14 +41,14 @@ class _SplashPageState extends State<SplashPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const BrightnessAwareOverlay(),
       child: Scaffold(
-        backgroundColor: SakuColors.blue100, // Sesuaikan dengan background GIF agar mulus
-        body: SafeArea(
+        backgroundColor: SakuColors.blue100, // Pastikan warna ini sama persis dengan background GIF kamu
+        body: SizedBox.expand( // Membantu memastikan child mengisi seluruh ruang yang tersedia
           child: Center(
             child: Image.asset(
-              'assets/splash_animation.gif',
-              width: 200, // Sesuaikan ukuran lebar GIF kamu
-              height: 200, // Sesuaikan ukuran tinggi GIF kamu
-              fit: BoxFit.contain,
+              'assets/animation.gif',
+              width: double.infinity, // Mengikuti lebar layar atau container
+              height: double.infinity, // Mengikuti tinggi layar atau container
+              fit: BoxFit.contain, // Gunakan BoxFit.cover jika ingin GIF memenuhi layar penuh tanpa border warna background
             ),
           ),
         ),

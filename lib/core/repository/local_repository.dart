@@ -27,7 +27,7 @@ class LocalRepository {
     final path = await getDatabasesPath();
     return openDatabase(
       '$path/saku.db',
-      version: 7,
+      version: 9,
       onCreate: _createDb,
       onUpgrade: _upgradeDb,
     );
@@ -56,6 +56,7 @@ class LocalRepository {
         title TEXT NOT NULL,
         amount_value INTEGER NOT NULL,
         api_id INTEGER,
+        wallet_id INTEGER,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     ''');
@@ -63,7 +64,8 @@ class LocalRepository {
       CREATE TABLE wallets (
         id INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
-        balance INTEGER NOT NULL
+        balance INTEGER NOT NULL,
+        icon TEXT
       )
     ''');
   }
@@ -107,6 +109,20 @@ class LocalRepository {
     if (oldVersion < 7) {
       try {
         await db.execute('ALTER TABLE transactions ADD COLUMN deadline TEXT');
+      } catch (_) {
+        // Column already exists, ignore.
+      }
+    }
+    if (oldVersion < 8) {
+      try {
+        await db.execute('ALTER TABLE budgets ADD COLUMN wallet_id INTEGER');
+      } catch (_) {
+        // Column already exists, ignore.
+      }
+    }
+    if (oldVersion < 9) {
+      try {
+        await db.execute('ALTER TABLE wallets ADD COLUMN icon TEXT');
       } catch (_) {
         // Column already exists, ignore.
       }
@@ -233,6 +249,7 @@ class LocalRepository {
       progress: 0,
       icon: categoryIcon((row['title'] as String?) ?? ''),
       apiId: row['api_id'] as int?,
+      walletId: row['wallet_id'] as int?,
     );
   }
 
@@ -269,6 +286,7 @@ class LocalRepository {
         id: row['id'] as int?,
         name: (row['name'] as String?) ?? '',
         balance: (row['balance'] as int?) ?? 0,
+        icon: row['icon'] as String?,
       )).toList();
     } catch (e, s) {
       log('[LocalRepository] loadWallets error', error: e, stackTrace: s);
@@ -286,6 +304,7 @@ class LocalRepository {
             'id': item.id,
             'name': item.name,
             'balance': item.balance,
+            'icon': item.icon,
           });
         }
       });
@@ -316,6 +335,7 @@ class LocalRepository {
       'title': item.title,
       'amount_value': item.amountValue,
       'api_id': item.apiId,
+      'wallet_id': item.walletId,
     };
   }
 }

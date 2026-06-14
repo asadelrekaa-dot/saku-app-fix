@@ -27,7 +27,8 @@ mixin _$DashboardEvent {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -45,7 +46,8 @@ mixin _$DashboardEvent {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -63,7 +65,8 @@ mixin _$DashboardEvent {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -199,7 +202,8 @@ class _$DashboardStartedImpl implements DashboardStarted {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -220,7 +224,8 @@ class _$DashboardStartedImpl implements DashboardStarted {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -241,7 +246,8 @@ class _$DashboardStartedImpl implements DashboardStarted {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -376,7 +382,8 @@ class _$DashboardMainShownImpl implements DashboardMainShown {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -397,7 +404,8 @@ class _$DashboardMainShownImpl implements DashboardMainShown {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -418,7 +426,8 @@ class _$DashboardMainShownImpl implements DashboardMainShown {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -582,7 +591,8 @@ class _$DashboardSurfaceShownImpl implements DashboardSurfaceShown {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -603,7 +613,8 @@ class _$DashboardSurfaceShownImpl implements DashboardSurfaceShown {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -624,7 +635,8 @@ class _$DashboardSurfaceShownImpl implements DashboardSurfaceShown {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -798,7 +810,8 @@ class _$DashboardAddNoteShownImpl implements DashboardAddNoteShown {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -819,7 +832,8 @@ class _$DashboardAddNoteShownImpl implements DashboardAddNoteShown {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -840,7 +854,8 @@ class _$DashboardAddNoteShownImpl implements DashboardAddNoteShown {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1013,7 +1028,8 @@ class _$DashboardTabSelectedImpl implements DashboardTabSelected {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -1034,7 +1050,8 @@ class _$DashboardTabSelectedImpl implements DashboardTabSelected {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1055,7 +1072,8 @@ class _$DashboardTabSelectedImpl implements DashboardTabSelected {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1229,7 +1247,8 @@ class _$DashboardTransactionAddedImpl implements DashboardTransactionAdded {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -1250,7 +1269,8 @@ class _$DashboardTransactionAddedImpl implements DashboardTransactionAdded {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1271,7 +1291,8 @@ class _$DashboardTransactionAddedImpl implements DashboardTransactionAdded {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1444,7 +1465,8 @@ class _$DashboardBudgetAddedImpl implements DashboardBudgetAdded {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -1465,7 +1487,8 @@ class _$DashboardBudgetAddedImpl implements DashboardBudgetAdded {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1486,7 +1509,8 @@ class _$DashboardBudgetAddedImpl implements DashboardBudgetAdded {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1660,7 +1684,8 @@ class _$DashboardBudgetDeletedImpl implements DashboardBudgetDeleted {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -1681,7 +1706,8 @@ class _$DashboardBudgetDeletedImpl implements DashboardBudgetDeleted {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1702,7 +1728,8 @@ class _$DashboardBudgetDeletedImpl implements DashboardBudgetDeleted {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1877,7 +1904,8 @@ class _$DashboardTransactionDeletedImpl implements DashboardTransactionDeleted {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -1898,7 +1926,8 @@ class _$DashboardTransactionDeletedImpl implements DashboardTransactionDeleted {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -1919,7 +1948,8 @@ class _$DashboardTransactionDeletedImpl implements DashboardTransactionDeleted {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -2020,7 +2050,7 @@ abstract class _$$DashboardTransactionSettledImplCopyWith<$Res> {
           $Res Function(_$DashboardTransactionSettledImpl) then) =
       __$$DashboardTransactionSettledImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({DashboardTransaction item});
+  $Res call({DashboardTransaction item, int walletId});
 }
 
 /// @nodoc
@@ -2039,12 +2069,17 @@ class __$$DashboardTransactionSettledImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? item = null,
+    Object? walletId = null,
   }) {
     return _then(_$DashboardTransactionSettledImpl(
       null == item
           ? _value.item
           : item // ignore: cast_nullable_to_non_nullable
               as DashboardTransaction,
+      null == walletId
+          ? _value.walletId
+          : walletId // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -2052,14 +2087,16 @@ class __$$DashboardTransactionSettledImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
-  const _$DashboardTransactionSettledImpl(this.item);
+  const _$DashboardTransactionSettledImpl(this.item, this.walletId);
 
   @override
   final DashboardTransaction item;
+  @override
+  final int walletId;
 
   @override
   String toString() {
-    return 'DashboardEvent.transactionSettled(item: $item)';
+    return 'DashboardEvent.transactionSettled(item: $item, walletId: $walletId)';
   }
 
   @override
@@ -2067,11 +2104,13 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DashboardTransactionSettledImpl &&
-            (identical(other.item, item) || other.item == item));
+            (identical(other.item, item) || other.item == item) &&
+            (identical(other.walletId, walletId) ||
+                other.walletId == walletId));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, item);
+  int get hashCode => Object.hash(runtimeType, item, walletId);
 
   /// Create a copy of DashboardEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -2094,13 +2133,14 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
         transactionUpdated,
   }) {
-    return transactionSettled(item);
+    return transactionSettled(item, walletId);
   }
 
   @override
@@ -2115,13 +2155,14 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
         transactionUpdated,
   }) {
-    return transactionSettled?.call(item);
+    return transactionSettled?.call(item, walletId);
   }
 
   @override
@@ -2136,7 +2177,8 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -2144,7 +2186,7 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
     required TResult orElse(),
   }) {
     if (transactionSettled != null) {
-      return transactionSettled(item);
+      return transactionSettled(item, walletId);
     }
     return orElse();
   }
@@ -2218,10 +2260,12 @@ class _$DashboardTransactionSettledImpl implements DashboardTransactionSettled {
 }
 
 abstract class DashboardTransactionSettled implements DashboardEvent {
-  const factory DashboardTransactionSettled(final DashboardTransaction item) =
+  const factory DashboardTransactionSettled(
+          final DashboardTransaction item, final int walletId) =
       _$DashboardTransactionSettledImpl;
 
   DashboardTransaction get item;
+  int get walletId;
 
   /// Create a copy of DashboardEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -2313,7 +2357,8 @@ class _$DashboardEditTransactionOpenedImpl
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -2334,7 +2379,8 @@ class _$DashboardEditTransactionOpenedImpl
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -2355,7 +2401,8 @@ class _$DashboardEditTransactionOpenedImpl
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -2540,7 +2587,8 @@ class _$DashboardTransactionUpdatedImpl implements DashboardTransactionUpdated {
     required TResult Function(DashboardBudget item) budgetAdded,
     required TResult Function(DashboardBudget item) budgetDeleted,
     required TResult Function(DashboardTransaction item) transactionDeleted,
-    required TResult Function(DashboardTransaction item) transactionSettled,
+    required TResult Function(DashboardTransaction item, int walletId)
+        transactionSettled,
     required TResult Function(DashboardTransaction item) editTransactionOpened,
     required TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)
@@ -2561,7 +2609,8 @@ class _$DashboardTransactionUpdatedImpl implements DashboardTransactionUpdated {
     TResult? Function(DashboardBudget item)? budgetAdded,
     TResult? Function(DashboardBudget item)? budgetDeleted,
     TResult? Function(DashboardTransaction item)? transactionDeleted,
-    TResult? Function(DashboardTransaction item)? transactionSettled,
+    TResult? Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult? Function(DashboardTransaction item)? editTransactionOpened,
     TResult? Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?
@@ -2582,7 +2631,8 @@ class _$DashboardTransactionUpdatedImpl implements DashboardTransactionUpdated {
     TResult Function(DashboardBudget item)? budgetAdded,
     TResult Function(DashboardBudget item)? budgetDeleted,
     TResult Function(DashboardTransaction item)? transactionDeleted,
-    TResult Function(DashboardTransaction item)? transactionSettled,
+    TResult Function(DashboardTransaction item, int walletId)?
+        transactionSettled,
     TResult Function(DashboardTransaction item)? editTransactionOpened,
     TResult Function(
             DashboardTransaction oldItem, DashboardTransaction newItem)?

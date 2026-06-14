@@ -47,16 +47,16 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   final Set<String> _notifiedBudgetKeys = {};
   final Set<String> _notifiedSpendingKeys = {};
 
-  Future<void> _adjustWalletBalance(int delta) async {
+  Future<void> _adjustWalletBalance(int delta, {int? walletId}) async {
     try {
-      final walletId = await LaravelApiService.instance.getWalletId();
+      final id = walletId ?? await LaravelApiService.instance.getWalletId();
       final wallets = await _repo.loadWallets();
       if (wallets.isEmpty) return;
       var found = false;
       final updated = wallets.map((w) {
-        if (w.id == walletId) {
+        if (w.id == id) {
           found = true;
-          return WalletItem(id: w.id, name: w.name, balance: w.balance + delta);
+          return WalletItem(id: w.id, name: w.name, balance: w.balance + delta, icon: w.icon);
         }
         return w;
       }).toList();
@@ -65,6 +65,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           id: wallets[0].id,
           name: wallets[0].name,
           balance: wallets[0].balance + delta,
+          icon: wallets[0].icon,
         );
       }
       await _repo.replaceAllWallets(updated);
@@ -91,6 +92,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     _recalculateBudgetProgress(emit);
     await _syncHomeWidget();
     NotificationService.instance.scheduleDailyReminder();
+    NotificationService.instance.scheduleAfternoonReminder();
     _checkAndNotify();
   }
 
@@ -150,6 +152,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       progress: 0,
       icon: categoryIcon(kategori),
       apiId: (item['id'] as int?),
+      walletId: (item['wallet_id'] as int?),
     );
   }
 
@@ -236,6 +239,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardTransactionAdded event,
     Emitter<DashboardState> emit,
   ) async {
+    await _adjustWalletBalance(event.item.amountValue);
+
     emit(
       state.copyWith(
         transactions: [event.item, ...state.transactions],
@@ -269,7 +274,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       log('[DashboardBloc] Failed to sync transaction to API', error: e);
       await _repo.addTransaction(event.item);
     }
-    await _adjustWalletBalance(event.item.amountValue);
   }
 
   Future<void> _onBudgetAdded(
@@ -289,10 +293,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final result = await LaravelApiService.instance.createBudget(
         kategoriId: _kategoriId(item.title),
         nominal: item.amountValue,
+        walletId: item.walletId,
       );
       final apiId = result['id'] as int?;
+      final walletId = result['wallet_id'] as int?;
       if (apiId != null) {
-        final saved = item.copyWith(apiId: apiId);
+        final saved = item.copyWith(apiId: apiId, walletId: walletId ?? item.walletId);
         emit(
           state.copyWith(
             budgets: state.budgets
@@ -333,6 +339,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardTransactionDeleted event,
     Emitter<DashboardState> emit,
   ) async {
+    await _adjustWalletBalance(-event.item.amountValue);
+
     emit(
       state.copyWith(
         transactions:
@@ -343,7 +351,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     await _syncHomeWidget();
     _checkNotifications();
     await _repo.deleteTransaction(event.item);
-    await _adjustWalletBalance(-event.item.amountValue);
 
     try {
       await LaravelApiService.instance.deleteTransaction(
@@ -359,6 +366,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardTransactionSettled event,
     Emitter<DashboardState> emit,
   ) async {
+    await _adjustWalletBalance(-event.item.amountValue, walletId: event.walletId);
+
     final settled = event.item.copyWith(settled: true);
     final updated = state.transactions
         .map((entry) => entry == event.item ? settled : entry)
@@ -392,6 +401,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardTransactionUpdated event,
     Emitter<DashboardState> emit,
   ) async {
+    await _adjustWalletBalance(event.newItem.amountValue - event.oldItem.amountValue);
+
     final updated = state.transactions
         .map((entry) => entry == event.oldItem ? event.newItem : entry)
         .toList();
@@ -407,7 +418,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     await _syncHomeWidget();
     _checkNotifications();
     await _repo.updateTransaction(event.oldItem, event.newItem);
-    await _adjustWalletBalance(event.newItem.amountValue - event.oldItem.amountValue);
 
     try {
       await LaravelApiService.instance.updateTransaction(

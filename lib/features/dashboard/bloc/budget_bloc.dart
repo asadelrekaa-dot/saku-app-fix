@@ -41,14 +41,16 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
       final result = await LaravelApiService.instance.createBudget(
         kategoriId: _kategoriId(event.item.title),
         nominal: event.item.amountValue,
+        walletId: event.item.walletId,
       );
       final apiId = result['id'] as int?;
+      final walletId = result['wallet_id'] as int?;
       if (apiId != null) {
         emit(
           state.copyWith(
             budgets: state.budgets
                 .map(
-                  (b) => b == event.item ? b.copyWith(apiId: apiId) : b,
+                  (b) => b == event.item ? b.copyWith(apiId: apiId, walletId: walletId ?? b.walletId) : b,
                 )
                 .toList(),
           ),
@@ -88,6 +90,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
       progress: 1,
       icon: categoryIcon(kategori),
       apiId: (item['id'] as int?),
+      walletId: (item['wallet_id'] as int?),
     );
   }
 }

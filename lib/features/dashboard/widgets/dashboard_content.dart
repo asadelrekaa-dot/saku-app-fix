@@ -37,6 +37,8 @@ class DashboardContent extends StatelessWidget {
           onDelete: (item) => bloc.add(DashboardBudgetDeleted(item)),
         ),
       DashboardSurface.insight => InsightDashboard(
+          transactions: state.transactions,
+          budgets: state.budgets,
           onBack: () => bloc.add(const DashboardMainShown()),
         ),
       DashboardSurface.notifications => NotificationsDashboard(
@@ -94,15 +96,15 @@ class DashboardContent extends StatelessWidget {
                  onOpenInsight: () => bloc.add(
                    const DashboardSurfaceShown(DashboardSurface.insight),
                  ),
-                 onMarkSettled: (item) =>
-                     bloc.add(DashboardTransactionSettled(item)),
+                  onMarkSettled: (item, walletId) =>
+                      bloc.add(DashboardTransactionSettled(item, walletId)),
                ),
             1 => HistoryDashboard(
                 transactions: state.transactions,
                 onDelete: (item) => bloc.add(DashboardTransactionDeleted(item)),
                 onEdit: (item) => bloc.add(DashboardEditTransactionOpened(item)),
-                onMarkSettled: (item) =>
-                    bloc.add(DashboardTransactionSettled(item)),
+                onMarkSettled: (item, walletId) =>
+                    bloc.add(DashboardTransactionSettled(item, walletId)),
               ),
             2 => ChartDashboard(transactions: state.transactions),
              _ => ProfileDashboard(

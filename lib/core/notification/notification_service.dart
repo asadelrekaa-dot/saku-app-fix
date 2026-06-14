@@ -13,6 +13,7 @@ class NotificationService {
   static const _dailyChannelId = 'saku_daily_reminder';
   static const _warningChannelId = 'saku_warnings';
   static const _dailyNotificationId = 1001;
+  static const _afternoonNotificationId = 1002;
 
   bool _initialized = false;
 
@@ -94,6 +95,39 @@ class NotificationService {
       _dailyNotificationId,
       'Pagi yang cerah!',
       'Jangan lupa catat pemasukkan & pengeluaran hari ini ya!',
+      tzScheduledDate,
+      details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  Future<void> scheduleAfternoonReminder() async {
+    await _plugin.cancel(_afternoonNotificationId);
+
+    final now = DateTime.now();
+    var scheduledDate = DateTime(now.year, now.month, now.day, 15, 0);
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
+    const androidDetails = AndroidNotificationDetails(
+      _dailyChannelId,
+      'Pengingat Harian',
+      channelDescription: 'Pengingat untuk mencatat pengeluaran setiap pagi',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const details = NotificationDetails(android: androidDetails);
+
+    await _plugin.zonedSchedule(
+      _afternoonNotificationId,
+      'Jangan lupa catat keuangan!',
+      'Catat pemasukan & pengeluaran hari ini di Saku yuk!',
       tzScheduledDate,
       details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
